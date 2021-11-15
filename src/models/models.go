@@ -4,7 +4,7 @@ import (
 	"math/big"
 	"time"
 
-	"latoken/relayer-smart-contract/src/service/storage"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -38,17 +38,6 @@ type BlockAndTxLogs struct {
 	TxLogs          []*storage.TxLog
 }
 
-// SwapRequest ...
-type SwapRequest struct {
-	ID                   common.Hash
-	RandomNumberHash     common.Hash
-	ExpireHeight         int64
-	SenderAddress        string
-	RecipientAddress     string
-	RecipientWorkerChain string
-	OutAmount            *big.Int
-}
-
 // StorageConfig contains configurations for storage, postgreSQL
 type StorageConfig struct {
 	URL        string // DataBase URL for connection
@@ -68,9 +57,6 @@ type WorkerConfig struct {
 	User                           string         `json:"user"`
 	Password                       string         `json:"password"`
 	SwapType                       string         `json:"swap_type"`
-	KeyType                        string         `json:"key_type"`
-	AWSRegion                      string         `json:"aws_region"`
-	AWSSecretName                  string         `json:"aws_secret_name"`
 	PrivateKey                     string         `json:"private_key"`
 	Provider                       string         `json:"provider"`
 	ContractAddr                   common.Address `json:"swap_contract_addr"`
@@ -86,14 +72,4 @@ type WorkerConfig struct {
 	ChainDecimal                   int            `json:"chain_decimal"`
 	ConfirmNum                     int64          `json:"confirm_num"`
 	StartBlockHeight               int64          `json:"start_block_height"`
-}
-
-type TssConfig struct {
-	Address    string
-	BaseFolder string
-}
-
-// RelayerConfig ...
-type RelayerConfig struct {
-	Address common.Address
 }

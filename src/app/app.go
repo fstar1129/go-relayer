@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"latoken/relayer-smart-contract/src/models"
-	rlr "latoken/relayer-smart-contract/src/service"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
+	rlr "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"

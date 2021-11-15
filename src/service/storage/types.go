@@ -69,14 +69,6 @@ const (
 	SwapStatusSpendSent       SwapStatus = "SPEND_SENT"
 	SwapStatusSpendConfirmed  SwapStatus = "SPEND_CONFIRMED"
 	SwapStatusSpendSentFailed SwapStatus = "SPEND_SENT_FAILED"
-	// // BIND
-	// SwapStatusBindSent       SwapStatus = "BIND_SENT"
-	// SwapStatusBindConfirmed  SwapStatus = "BIND_CONFIRMED"
-	// SwapStatusBindSentFailed SwapStatus = "BIND_SENT_FAILED"
-	// // UNBIND
-	// SwapStatusUnbindSent       SwapStatus = "UNBIND_SENT"
-	// SwapStatusLUnbindConfirmed  SwapStatus = "UNBIND_CONFIRMED"
-	// SwapStatusUnbindSentFailed SwapStatus = "UNBIND_SENT_FAILED"
 	// // REFUND
 	SwapStatusWorkerRefundSent       SwapStatus = "WORKER_REFUND_SENT"
 	SwapStatusWorkerRefundConfirmed  SwapStatus = "WORKER_REFUND_CONFIRMED"

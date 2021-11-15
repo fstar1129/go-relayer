@@ -5,8 +5,8 @@ import (
 	"math/big"
 	"strings"
 
-	"latoken/relayer-smart-contract/src/models"
-	"latoken/relayer-smart-contract/src/service/storage"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
 
 	"github.com/ethereum/go-ethereum/common"
 )

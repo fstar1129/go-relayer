@@ -24,7 +24,7 @@ func (d *DataBase) GetSwapsByTypeAndStatuses(swapType SwapType, statuses []SwapS
 }
 
 // UpdateSwapStatus ...
-func (d *DataBase) UpdateSwapStatus(swap *Swap, status SwapStatus, dataHash, rOutAmount string) {
+func (d *DataBase) UpdateSwapStatus(swap *Swap, status SwapStatus, rOutAmount string) {
 	toUpdate := map[string]interface{}{
 		"status":      status,
 		"update_time": time.Now().Unix(),
@@ -32,8 +32,6 @@ func (d *DataBase) UpdateSwapStatus(swap *Swap, status SwapStatus, dataHash, rOu
 
 	if rOutAmount != "" {
 		toUpdate["r_out_amount"] = rOutAmount
-	} else if dataHash != "" {
-		toUpdate["data_hash"] = dataHash
 	}
 
 	d.db.Model(swap).Update(toUpdate)
@@ -81,10 +79,6 @@ func (d *DataBase) UpdateSwapStatusWhenConfirmTx(tx *gorm.DB, swapType SwapType,
 	toUpdate := map[string]interface{}{
 		"status":      updateStatus,
 		"update_time": time.Now().Unix(),
-	}
-
-	if txLog.DataHash != "" {
-		toUpdate["data_hash"] = txLog.DataHash
 	}
 
 	return query.Updates(toUpdate).Error

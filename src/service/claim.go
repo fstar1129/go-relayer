@@ -4,11 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"latoken/relayer-smart-contract/src/service/storage"
-	workers "latoken/relayer-smart-contract/src/service/workers"
-	"latoken/relayer-smart-contract/src/service/workers/utils"
-
-	"github.com/ethereum/go-ethereum/common"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
+	workers "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/utils"
 )
 
 // emitChainSendClaim ...
@@ -19,7 +17,7 @@ func (r *RelayerSRV) emitChainSendClaim(swapType storage.SwapType) {
 
 		for _, swap := range swaps {
 			if swap.Status == storage.SwapStatusDepositConfirmed {
-				r.logger.Info(fmt.Sprintf("attempting to send claim for swap"))
+				r.logger.Info("attempting to send claim for swap")
 				if _, err := r.sendClaim(swapType, r.laWorker, swap); err != nil {
 					r.logger.Errorf("submit claim failed: %s", err)
 				}
@@ -42,18 +40,20 @@ func (r *RelayerSRV) sendClaim(direction storage.SwapType, worker workers.IWorke
 		CreateTime: time.Now().Unix(),
 	}
 
-	fmt.Printf("Vote parameters: depositNonce(%d) | datahash(%s) | resourceID(%s)\n", swap.DepositNonce, swap.DataHash, swap.ResourceID)
+	r.logger.Infof("claim parameters: depositNonce(%d) | sender(%s) | outAmount(%s) | resourceID(%s)\n",
+		swap.DepositNonce, swap.SenderAddr, swap.OutAmount, swap.ResourceID)
 
-	txHash, err := worker.Vote(swap.DepositNonce, utils.StringToBytes32(swap.ResourceID), common.Hex2Bytes(swap.DataHash))
+	txHash, err := worker.Vote(swap.DepositNonce, utils.StringToBytes8(swap.ChainID),
+		utils.StringToBytes32(swap.ResourceID), swap.ReceiverAddr, swap.OutAmount)
 	if err != nil {
 		txSent.ErrMsg = err.Error()
 		txSent.Status = storage.TxSentStatusFailed
-		r.storage.UpdateSwapStatus(swap, storage.SwapStatusClaimSentFailed, "", "")
+		r.storage.UpdateSwapStatus(swap, storage.SwapStatusClaimSentFailed, "")
 		r.storage.CreateTxSent(txSent)
 		return "", fmt.Errorf("could not send claim tx: %w", err)
 	}
 	txSent.TxHash = txHash
-	r.storage.UpdateSwapStatus(swap, storage.SwapStatusClaimSent, "", "")
+	r.storage.UpdateSwapStatus(swap, storage.SwapStatusClaimSent, "")
 
 	r.logger.Infof("send claim tx success | chain=%s, swap_ID=%s, tx_hash=%s", worker.GetChain(),
 		swap.SwapID, txSent.TxHash)

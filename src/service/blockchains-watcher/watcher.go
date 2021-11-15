@@ -5,15 +5,15 @@ import (
 	"strings"
 	"time"
 
-	"latoken/relayer-smart-contract/src/service/storage"
-	"latoken/relayer-smart-contract/src/service/workers"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers"
 
 	"github.com/sirupsen/logrus"
 )
 
 // WatcherSRV ...
 type WatcherSRV struct {
-	logger  *logrus.Logger
+	logger  *logrus.Entry
 	storage *storage.DataBase
 	Workers map[string]workers.IWorker
 }
@@ -21,7 +21,7 @@ type WatcherSRV struct {
 // CreateNewWatcherSRV ...
 func CreateNewWatcherSRV(logger *logrus.Logger, db *storage.DataBase, workers map[string]workers.IWorker) *WatcherSRV {
 	return &WatcherSRV{
-		logger:  logger,
+		logger:  logger.WithField("layer", "watcher"),
 		storage: db,
 		Workers: workers,
 	}
@@ -31,7 +31,12 @@ func CreateNewWatcherSRV(logger *logrus.Logger, db *storage.DataBase, workers ma
 func (w *WatcherSRV) Run() {
 	for name, worker := range w.Workers {
 		w.logger.Infoln("watcher | worker name: ", name)
-		go w.collector(worker, worker.GetFetchInterval(), worker.GetStartHeight())
+		startHeight, err := worker.GetStartHeight()
+		if err != nil {
+			w.logger.Fatalf("err = %v", err)
+			return
+		}
+		go w.collector(worker, worker.GetFetchInterval(), startHeight)
 		time.Sleep(100 * time.Millisecond)
 	}
 
@@ -75,7 +80,7 @@ func (w *WatcherSRV) getBlock(worker workers.IWorker, curHeight, nextHeight int6
 
 	parentHash := blockAndTxLogs.ParentBlockHash
 	if curHeight != 0 && parentHash != curBlockHash {
-		w.logger.Infof("delete %s block at height %d, hash=%s", worker.GetChain(), curHeight, curBlockHash)
+		w.logger.Infof("delete %s block at height %d, hash=%s(parent hash = %s)", worker.GetChain(), curHeight, curBlockHash, parentHash)
 		return w.storage.DeleteBlockAndTxs(worker.GetChain(), curHeight)
 	}
 

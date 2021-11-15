@@ -85,7 +85,6 @@ func (d *DataBase) UpdateConfirmedNum(chain string, height int64) error {
 
 // GetCurrentBlockLog returns current block's logs
 func (d *DataBase) GetCurrentBlockLog(chainID string) (logs BlockLog) {
-	//	logs := &BlockLog{}
 	d.db.Where("chain = ?", chainID).Order("height desc").First(&logs)
 	return logs
 }

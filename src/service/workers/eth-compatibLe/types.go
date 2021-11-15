@@ -3,36 +3,24 @@ package eth
 import (
 	"bytes"
 	"fmt"
-	"latoken/relayer-smart-contract/src/service/storage"
-	ethbr "latoken/relayer-smart-contract/src/service/workers/eth-compatible/abi/bridge/eth"
-	labr "latoken/relayer-smart-contract/src/service/workers/eth-compatible/abi/bridge/la"
 	"math/big"
 	"strings"
 
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
+	ethbr "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/eth-compatible/abi/bridge/eth"
+	labr "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/eth-compatible/abi/bridge/la"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 )
-
-const workerChainDecimal = 8
 
 ////
 // EVENTS NAMES
 ////
 
 const (
-	// InitEventName ...
-	InitEventName = "Init"
-
-	// HTLTEventName ...
-	HTLTEventName = "HTLT"
-
-	// ClaimEventName ...
-	ClaimEventName = "Claimed"
-
-	// CreateUnbindEventName ...
-	CreateUnbindEventName = "CreateUnbind"
-
 	// DepositEventName ...
 	DepositEventName = "Deposit"
 
@@ -66,13 +54,13 @@ var (
 	RefundEventHash = common.HexToHash("0x04eb8ae268f23cfe2f9d72fa12367b104af16959f6a93530a4cc0f50688124f9")
 
 	// DepositEventHash
-	DepositEventHash = common.HexToHash("0xb17d269f66f091233e7970a3f50b6bed322eaccf27b39f83d94277be64cf4bea")
+	DepositEventHash = common.HexToHash("0x6a8f7ffca1e3ab54554c709a9eb23e11fc5063f0b24e40087c40ab3e7027f189")
 
 	// ProposalVoteHash
-	ProposalVoteHash = common.HexToHash("0xcf0a87860fb1c3985a5ba36f56f0d37a1af050a78bad02ac50b51c29f3c2485c")
+	ProposalVoteHash = common.HexToHash("0x85f41114efc645854a10eef33ef4dec54341cb3ec3ab32386c92c881f3b1b505")
 
 	// ProposalEventHash
-	ProposalEventHash = common.HexToHash("0x1281a0584988174583df37b5112e6760e9a7d4845e65a832868aeffc0e547473")
+	ProposalEventHash = common.HexToHash("0x8dc49847a011c3b316cd0f50cf982e0fd5b3ddb7fdf970fc81a25557f0923a73")
 )
 
 // ContractEvent ...
@@ -86,9 +74,9 @@ type DepositEvent struct {
 	ResourceID         []byte
 	DepositNonce       uint64
 	Depositor          common.Address
-	RecipientAddress   []byte
+	RecipientAddress   common.Address
 	TokenAddress       common.Address
-	Data               []byte
+	Amount             *big.Int
 }
 
 // ParseDepositEvent ...
@@ -107,9 +95,9 @@ func ParseDepositEvent(abi *abi.ABI, log *types.Log) (ContractEvent, error) {
 	fmt.Printf("resource ID: 0x%s\n", common.Bytes2Hex(ev.ResourceID))
 	fmt.Printf("deposit nonce: %d\n", ev.DepositNonce)
 	fmt.Printf("depositor address: %s\n", ev.Depositor.Hex())
-	fmt.Printf("recipient address: %s\n", common.Bytes2Hex(ev.RecipientAddress))
+	fmt.Printf("recipient address: %s\n", ev.RecipientAddress.Hex())
 	fmt.Printf("token address: %s\n", ev.TokenAddress.Hex())
-	fmt.Printf("data: %s\n", common.Bytes2Hex(ev.Data))
+	fmt.Printf("amount : %s\n", ev.Amount.String())
 
 	return ev, nil
 }
@@ -125,15 +113,15 @@ func (ev DepositEvent) ToTxLog() *storage.TxLog {
 		ResourceID:         common.Bytes2Hex(ev.ResourceID),
 		DepositNonce:       ev.DepositNonce,
 		SenderAddr:         ev.Depositor.Hex(),
-		ReceiverAddr:       common.Bytes2Hex(ev.RecipientAddress),
-		ERC20TokenAddr:     ev.TokenAddress.Hex(),
-		DataHash:           common.Bytes2Hex(ev.Data),
+		ReceiverAddr:       ev.RecipientAddress.Hex(),
+		InTokenAddr:        ev.TokenAddress.Hex(),
+		OutAmount:          ev.Amount.String(),
 	}
 }
 
 // ProposalVoteEvent represents a Deposit event raised by the Bridge.sol contract.
 type ProposalVoteEvent struct {
-	OriginChainID [32]byte
+	OriginChainID [8]byte
 	DepositNonce  uint64
 	Status        uint8
 	ResourceID    [32]byte
@@ -143,13 +131,13 @@ type ProposalVoteEvent struct {
 func ParseProposalVote(abi *abi.ABI, log *types.Log) (ContractEvent, error) {
 	var ev ProposalVoteEvent
 	if err := abi.UnpackIntoInterface(&ev, ProposalVoteName, log.Data); err != nil {
+		fmt.Println("AA")
 		return nil, err
 	}
 
-	//	ev.OriginChainID = common.RightPadBytes(log.Topics[1].Bytes(), 32)
-	ev.DepositNonce = big.NewInt(0).SetBytes(log.Topics[1].Bytes()).Uint64()
-	//ev.Status = common.RightPadBytes(log.Topics[2].Bytes(), 8)
-	ev.Status = uint8(big.NewInt(0).SetBytes(log.Topics[2].Bytes()).Uint64())
+	// ev.OriginChainID = log.Topics[1].Bytes()
+	// ev.DepositNonce = big.NewInt(0).SetBytes(log.Topics[2].Bytes()).Uint64()
+	// ev.Status = uint8(big.NewInt(0).SetBytes(log.Topics[3].Bytes()).Uint64())
 
 	fmt.Printf("ProposalVote\n")
 	fmt.Printf("origin chain ID: 0x%s\n", common.Bytes2Hex(ev.OriginChainID[:]))
@@ -175,7 +163,7 @@ func (ev ProposalVoteEvent) ToTxLog() *storage.TxLog {
 
 // ProposalEvent represents a Deposit event raised by the Bridge.sol contract.
 type ProposalEvent struct {
-	OriginChainID [32]byte
+	OriginChainID [8]byte
 	DepositNonce  uint64
 	Status        uint8
 	ResourceID    [32]byte
@@ -188,10 +176,9 @@ func ParseProposalEvent(abi *abi.ABI, log *types.Log) (ContractEvent, error) {
 	if err := abi.UnpackIntoInterface(&ev, ProposalEventName, log.Data); err != nil {
 		return nil, err
 	}
-
-	//ev.OriginChainID = common.RightPadBytes(log.Topics[1].Bytes(), 32)
-	ev.DepositNonce = big.NewInt(0).SetBytes(log.Topics[1].Bytes()).Uint64()
-	ev.Status = uint8(big.NewInt(0).SetBytes(log.Topics[2].Bytes()).Uint64())
+	// ev.OriginChainID = log.Topics[1].Bytes()
+	// ev.DepositNonce = big.NewInt(0).SetBytes(log.Topics[2].Bytes()).Uint64()
+	// ev.Status = uint8(big.NewInt(0).SetBytes(log.Topics[3].Bytes()).Uint64())
 
 	fmt.Printf("ProposalEvent\n")
 	fmt.Printf("origin chain ID: 0x%s\n", common.Bytes2Hex(ev.OriginChainID[:]))
@@ -215,7 +202,6 @@ func (ev ProposalEvent) ToTxLog() *storage.TxLog {
 		DepositNonce:  ev.DepositNonce,
 		SwapStatus:    ev.Status,
 		ResourceID:    common.Bytes2Hex(ev.ResourceID[:]),
-		//DataHash:      common.Bytes2Hex(ev.DataHash[:]),
 	}
 
 	if ev.Status == uint8(2) {
@@ -243,243 +229,8 @@ func ParseEvent(log *types.Log) (ContractEvent, error) {
 	return nil, nil
 }
 
-// // InitEvent ...
-// type InitEvent struct {
-// 	Timestamp        uint64
-// 	MsgSender        common.Address
-// 	RecipientAddr    common.Address
-// 	SwapID           common.Hash
-// 	RandomNumberHash common.Hash
-// 	RandomNumber     common.Hash
-// 	RefundAddr       common.Hash
-// 	ExpireHeight     *big.Int
-// 	OutAmount        *big.Int
-// 	LaAmount         *big.Int
-// }
-
-// // ParseInitEvent ...
-// func ParseInitEvent(abi *abi.ABI, log *types.Log) (ContractEvent, error) {
-// 	var ev InitEvent
-// 	if err := abi.UnpackIntoInterface(&ev, InitEventName, log.Data); err != nil {
-// 		return nil, err
-// 	}
-
-// 	ev.MsgSender = common.BytesToAddress(log.Topics[1].Bytes())
-// 	ev.RecipientAddr = common.BytesToAddress(log.Topics[2].Bytes())
-// 	ev.SwapID = common.BytesToHash(log.Topics[3].Bytes())
-
-// 	fmt.Printf("UNBIND\n")
-// 	fmt.Printf("sender addr: %s\n", ev.MsgSender.String())
-// 	fmt.Printf("receiver addr: %s\n", ev.RecipientAddr.String())
-// 	fmt.Printf("swap id: %s \n", hex.EncodeToString(ev.SwapID[:]))
-// 	fmt.Printf("timestamp: %d\n", ev.Timestamp)
-// 	fmt.Printf("expire height: %d\n", ev.ExpireHeight)
-// 	fmt.Printf("erc20 amount: %d\n", ev.OutAmount)
-// 	fmt.Printf("la amount: %d\n", ev.LaAmount)
-// 	return ev, nil
-// }
-
-// // ToTxLog ...
-// func (ev InitEvent) ToTxLog() *storage.TxLog {
-// 	return &storage.TxLog{
-// 		Chain:        storage.EthChain,
-// 		SwapType:     storage.SwapTypeUnbind,
-// 		TxType:       storage.TxTypeCreate,
-// 		SwapID:       ev.SwapID.String(),
-// 		SenderAddr:   ev.MsgSender.Hex(),
-// 		ReceiverAddr: ev.RecipientAddr.Hex(),
-// 		Timestamp:    int64(ev.Timestamp),
-// 		ExpireHeight: ev.ExpireHeight.Int64(),
-// 		InAmount:     ev.LaAmount.String(),
-// 		OutAmount:    ev.OutAmount.String(),
-// 	}
-// }
-
-// // HTLTEvent ...
-// type HTLTEvent struct {
-// 	Timestamp        uint64
-// 	MsgSender        common.Address
-// 	LaRecipientAddr  common.Address
-// 	SwapID           common.Hash
-// 	RandomNumberHash common.Hash
-// 	ERC20TokenAddr   common.Address
-// 	LRC20TokenAddr   common.Address
-// 	RefundAddr       common.Address
-// 	ExpireHeight     *big.Int
-// 	OutAmount        *big.Int
-// 	LaAmount         *big.Int
-// }
-
-// // ParseHTLTEvent ...
-// func ParseHTLTEvent(abix *abi.ABI, log *types.Log) (ContractEvent, error) {
-// 	//
-// 	var ev HTLTEvent
-// 	err := abix.UnpackIntoInterface(&ev, HTLTEventName, log.Data)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	ev.MsgSender = common.BytesToAddress(log.Topics[1].Bytes())
-// 	ev.LaRecipientAddr = common.BytesToAddress(log.Topics[2].Bytes())
-// 	ev.SwapID = common.BytesToHash(log.Topics[3].Bytes())
-
-// 	fmt.Printf("HTLT\n")
-// 	fmt.Printf("sender addr: %s\n", ev.MsgSender.String())
-// 	fmt.Printf("lachain receiver addr: %s\n", ev.LaRecipientAddr.String())
-// 	fmt.Printf("swap ID: %s\n", ev.SwapID.String())
-// 	fmt.Printf("Random num hash: %s\n", ev.RandomNumberHash.String())
-// 	fmt.Printf("erc20 addr: %s\n", ev.ERC20TokenAddr.String())
-// 	fmt.Printf("lrc20 addr: %s\n", ev.LRC20TokenAddr.String())
-// 	fmt.Printf("timestamp: %d\n", ev.Timestamp)
-// 	fmt.Printf("expire height: %d\n", ev.ExpireHeight)
-// 	fmt.Printf("erc20 amount: %d\n", ev.OutAmount)
-// 	fmt.Printf("la amount: %d\n", ev.LaAmount)
-// 	return ev, nil
-// }
-
-// // ToTxLog ...
-// func (ev HTLTEvent) ToTxLog() *storage.TxLog {
-// 	swapID := calculateSwapID(ev.RandomNumberHash.Bytes(), ev.MsgSender.Bytes(), ev.LaRecipientAddr.Bytes())
-
-// 	fmt.Println(hex.EncodeToString(swapID), " | ", ev.SwapID.String())
-
-// 	return &storage.TxLog{
-// 		Chain:          storage.EthChain,
-// 		SwapType:       storage.SwapTypeBind,
-// 		TxType:         storage.TxTypeHTLT,
-// 		SwapID:         ev.SwapID.String(),
-// 		ERC20TokenAddr: ev.ERC20TokenAddr.Hex(),
-// 		LRC20TokenAddr: ev.LRC20TokenAddr.Hex(),
-// 		SenderAddr:     ev.MsgSender.Hex(),
-// 		ReceiverAddr:   ev.LaRecipientAddr.Hex(),
-// 		Timestamp:      int64(ev.Timestamp),
-// 		ExpireHeight:   ev.ExpireHeight.Int64(),
-// 		InAmount:       ev.LaAmount.String(),
-// 		OutAmount:      ev.OutAmount.String(),
-// 	}
-// }
-
-// // ClaimedEvent ...
-// type ClaimedEvent struct {
-// 	MsgSender        common.Address
-// 	RecipientAddr    common.Address
-// 	SwapID           common.Hash
-// 	RandomNumberHash common.Hash
-// 	RandomNumber     common.Hash
-// }
-
-// // ParseClaimEvent ...
-// func ParseClaimEvent(abi *abi.ABI, log *types.Log) (ContractEvent, error) {
-// 	var ev ClaimedEvent
-// 	if err := abi.UnpackIntoInterface(&ev, ClaimEventName, log.Data); err != nil {
-// 		return nil, err
-// 	}
-
-// 	ev.MsgSender = common.BytesToAddress(log.Topics[1].Bytes())
-// 	ev.RecipientAddr = common.BytesToAddress(log.Topics[2].Bytes())
-// 	ev.SwapID = common.BytesToHash(log.Topics[3].Bytes())
-
-// 	fmt.Printf("CLAIMED\n")
-// 	fmt.Printf("sender addr: %s | ", ev.MsgSender.String())
-// 	fmt.Printf("receiver addr: %s | ", ev.RecipientAddr.String())
-// 	fmt.Printf("swap id: %s | ", hex.EncodeToString(ev.SwapID[:]))
-// 	fmt.Printf("random number hash: %s | ", hex.EncodeToString(ev.RandomNumberHash[:]))
-// 	fmt.Printf("random number: %s | \n", hex.EncodeToString(ev.RandomNumber[:]))
-// 	return ev, nil
-// }
-
-// // ToTxLog ...
-// func (ev ClaimedEvent) ToTxLog() *storage.TxLog {
-// 	return &storage.TxLog{
-// 		Chain:        storage.EthChain,
-// 		TxType:       storage.TxTypeClaim,
-// 		SwapID:       hex.EncodeToString(ev.SwapID[:]),
-// 		SenderAddr:   ev.MsgSender.Hex(),
-// 		ReceiverAddr: ev.RecipientAddr.Hex(),
-// 	}
-// }
-
-// // CreateUnbindEvent ...
-// type CreateUnbindEvent struct {
-// 	Timestamp        uint64
-// 	MsgSender        common.Address
-// 	RecipientAddr    common.Address
-// 	SwapID           common.Hash
-// 	RandomNumberHash common.Hash
-// 	RandomNumber     common.Hash
-// 	RefundAddr       common.Address
-// 	ExpireHeight     *big.Int
-// 	OutAmount        *big.Int
-// 	LaAmount         *big.Int
-// }
-
-// // ParseCreateUnbindEvent ...
-// func ParseCreateUnbindEvent(abi *abi.ABI, log *types.Log) (ContractEvent, error) {
-// 	var ev CreateUnbindEvent
-// 	if err := abi.UnpackIntoInterface(&ev, CreateUnbindEventName, log.Data); err != nil {
-// 		return nil, err
-// 	}
-
-// 	ev.MsgSender = common.BytesToAddress(log.Topics[1].Bytes())
-// 	ev.RecipientAddr = common.BytesToAddress(log.Topics[2].Bytes())
-// 	ev.SwapID = common.BytesToHash(log.Topics[3].Bytes())
-
-// 	fmt.Printf("UNBIND\n")
-// 	fmt.Printf("sender addr: %s\n", ev.MsgSender.String())
-// 	fmt.Printf("receiver addr: %s\n", ev.RecipientAddr.String())
-// 	fmt.Printf("swap id: %s \n", hex.EncodeToString(ev.SwapID[:]))
-// 	fmt.Printf("timestamp: %d\n", ev.Timestamp)
-// 	fmt.Printf("expire height: %d\n", ev.ExpireHeight)
-// 	fmt.Printf("erc20 amount: %d\n", ev.OutAmount)
-// 	fmt.Printf("la amount: %d\n", ev.LaAmount)
-// 	return ev, nil
-// }
-
-// // ToTxLog ...
-// func (ev CreateUnbindEvent) ToTxLog() *storage.TxLog {
-// 	return &storage.TxLog{
-// 		Chain:        storage.EthChain,
-// 		SwapType:     storage.SwapTypeUnbind,
-// 		TxType:       storage.TxTypeCreate,
-// 		SwapID:       ev.SwapID.String(),
-// 		SenderAddr:   ev.MsgSender.Hex(),
-// 		ReceiverAddr: ev.RecipientAddr.Hex(),
-// 		Timestamp:    int64(ev.Timestamp),
-// 		ExpireHeight: ev.ExpireHeight.Int64(),
-// 		InAmount:     ev.LaAmount.String(),
-// 		OutAmount:    ev.OutAmount.String(),
-// 	}
-// }
-
-// // RefundEvent ...
-// type RefundEvent struct {
-// 	MsgSender        common.Address
-// 	RecipientAddr    common.Address
-// 	SwapID           common.Hash
-// 	RandomNumberHash common.Hash
-// }
-
-// // ParseRefundEvent ...
-// func ParseRefundEvent(log *types.Log) (ContractEvent, error) {
-// 	var ev RefundEvent
-// 	ev.MsgSender = common.BytesToAddress(log.Topics[1].Bytes())
-// 	ev.RecipientAddr = common.BytesToAddress(log.Topics[2].Bytes())
-// 	ev.SwapID = common.BytesToHash(log.Topics[3].Bytes())
-
-// 	fmt.Printf("sender addr: %s", ev.MsgSender.String())
-// 	fmt.Printf("swap id: %s", hex.EncodeToString(ev.SwapID[:]))
-// 	fmt.Printf("receiver addr: %s", ev.RecipientAddr.String())
-// 	fmt.Printf("random number hash: %s", hex.EncodeToString(ev.RandomNumberHash[:]))
-
-// 	return ev, nil
-// }
-
-// // ToTxLog ...
-// func (ev RefundEvent) ToTxLog() *storage.TxLog {
-// 	return &storage.TxLog{
-// 		TxType:       storage.TxTypeWorkerRefund,
-// 		SwapID:       hex.EncodeToString(ev.SwapID[:]),
-// 		SenderAddr:   ev.MsgSender.Hex(),
-// 		ReceiverAddr: ev.RecipientAddr.Hex(),
-// 	}
-// }
+type Header struct {
+	Hash       common.Hash    `json:"hash"`
+	ParentHash common.Hash    `json:"parentHash"       gencodec:"required"`
+	Time       hexutil.Uint64 `json:"timestamp"        gencodec:"required"`
+}

@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"latoken/relayer-smart-contract/src/models"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
 
 	"github.com/spf13/viper"
 )

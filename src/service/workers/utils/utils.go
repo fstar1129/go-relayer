@@ -2,21 +2,14 @@ package utils
 
 import (
 	"crypto/ecdsa"
-	"latoken/relayer-smart-contract/src/models"
 	"math"
 	"math/big"
+
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 )
-
-// // CalculateSwapID ...
-// func calculateSwapID(randomNumberHash, sender, laRecipientAddr []byte) []byte {
-// 	data := randomNumberHash
-// 	data = append(data, []byte(sender)...)
-// 	data = append(data, []byte(laRecipientAddr)...)
-// 	return tmhash.Sum(data)
-// }
 
 func GetPrivateKey(config *models.WorkerConfig) (*ecdsa.PrivateKey, error) {
 	privKey, err := crypto.HexToECDSA(config.PrivateKey)

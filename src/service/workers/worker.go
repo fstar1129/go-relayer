@@ -3,8 +3,8 @@ package workers
 import (
 	"time"
 
-	"latoken/relayer-smart-contract/src/models"
-	"latoken/relayer-smart-contract/src/service/storage"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
 )
 
 // IWorker ...
@@ -14,7 +14,7 @@ type IWorker interface {
 	// GetWokrerAddress returns worker address
 	GetWorkerAddress() string
 	// GetStartHeight returns blockchain start height for watcher
-	GetStartHeight() int64
+	GetStartHeight() (int64, error)
 	// GetConfirmNum returns numbers of blocks after them tx will be confirmed
 	GetConfirmNum() int64
 	// GetHeight returns current height of chain
@@ -45,24 +45,13 @@ type IWorker interface {
 	//	GetSwap(swapID common.Hash) (*models.SwapRequest, error)
 	// HasSwap returns does swap exist
 	// HasSwap(swapID common.Hash) (bool, error)
-	// HTLT sends htlt tx
-	//HTLT(erc20TokenAddr, lrc20TokenAddr, recipientAddr, otherChainRecipientAddr string, timestamp int64,
 	//	heightSpan int64, outAmount *big.Int) (string, error)
 	// CreateRequest sends wrapped tokens tx
 	//	CreateRequest(swapID common.Hash) (string, error)
-	// SendClaim
-	//	SendClaim(swapID common.Hash) (string, error)
 	// SpendBind
-	SpendBind(depositNonce uint64, chainID [8]byte, data []byte, resourceID [32]byte) (string, error)
+	SpendBind(depositNonce uint64, chainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error)
 	// SpendUnBind
-	// ConfirmUnBind(swapID common.Hash, erc20Addr, toAddress common.Address, amount *big.Int) (string, error)
-	// Unbind sends unbind tx
-	SpendUnbind(depositNonce uint64, data []byte, resourceID [32]byte) (string, error)
-
-	//
-	Vote(depositNonce uint64, resourceID [32]byte, dataHash []byte) (string, error)
-	// Refund sends refund tx
-	//Refund(swapID common.Hash) (string, error)
-	// SendAmount
-	//SendAmount(address string, amount *big.Int) (string, error)
+	SpendUnbind(depositNonce uint64, chainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error)
+	// Vote
+	Vote(depositNonce uint64, chainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error)
 }

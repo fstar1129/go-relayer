@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"latoken/relayer-smart-contract/src/app"
-	"latoken/relayer-smart-contract/src/config"
 	"os"
 	"os/signal"
 	"time"
+
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/app"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/config"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -35,6 +36,11 @@ func main() {
 	}
 	logger.SetLevel(level)
 
+	// laworker := eth.NewErc20Worker(logger, laCfg)
+	// laworker.GetBlockAndTxs(146418)
+
+	// return
+
 	// Set connection to onlife_business database
 	db, err := gorm.Open(dbConfig.DBDriver, dbURL)
 	if err != nil {
@@ -52,26 +58,7 @@ func main() {
 		logger.Infof("System signal: %+v\n", sign)
 		cancel()
 	}()
-
 	app := app.NewApp(logger, srvURL, db, laCfg, ethCfg)
-
 	//run App
 	app.Run(ctx)
 }
-
-// client, err := ethclient.Dial("https://ropsten.infura.io/v3/8b31a268c67b4a6f839db69b8e9a9cdc")
-// if err != nil {
-// 	panic(fmt.Sprintf("new eth client error, err=%s", err.Error()))
-// }
-
-// header, err := client.HeaderByNumber(context.Background(), big.NewInt(10114174))
-// if err != nil {
-// 	panic(fmt.Sprintf("new eth client error, err=%s", err.Error()))
-// }
-
-// // header2, err := client.HeaderByHash(context.Background(), common.HexToHash("0xa7fbb9720bd34065559550c7270f35918720bc9562247f112dcf21f49eb3f81a"))
-// // if err != nil {
-// // 	panic(fmt.Sprintf("new eth client error, err=%s", err.Error()))
-// // }
-
-// fmt.Println(header.Hash().Hex(), header.Number)

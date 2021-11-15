@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/jinzhu/gorm"
@@ -67,6 +68,8 @@ func (d *DataBase) ConfirmWorkerTx(chainID string, txLogs []*TxLog, txHashes []s
 	return nil
 }
 
+//  !!! TODO !!!
+
 // ConfirmTx ...
 func (d *DataBase) ConfirmTx(tx *gorm.DB, txLog *TxLog) error {
 	switch txLog.TxType {
@@ -85,6 +88,7 @@ func (d *DataBase) ConfirmTx(tx *gorm.DB, txLog *TxLog) error {
 			return err
 		}
 	case TxTypeClaim:
+		fmt.Println("CLAIM")
 		// BIND tokens(mainchain(e.g. btc, eth) -> lachain)
 		if err := d.UpdateSwapStatusWhenConfirmTx(tx, SwapTypeBind, txLog, []SwapStatus{
 			SwapStatusClaimSent}, nil, SwapStatusClaimConfirmed); err != nil {
@@ -98,9 +102,11 @@ func (d *DataBase) ConfirmTx(tx *gorm.DB, txLog *TxLog) error {
 		}
 
 	case TxTypePassed:
+		fmt.Println("PASSSED")
 		// BIND tokens(mainchain(e.g. btc, eth) -> lachain)
 		if err := d.UpdateSwapStatusWhenConfirmTx(tx, SwapTypeBind, txLog, []SwapStatus{
 			SwapStatusClaimConfirmed}, nil, SwapStatusPassedConfirmed); err != nil {
+			fmt.Println("XXXXX: ", err)
 			return err
 		}
 
@@ -193,13 +199,8 @@ func (d *DataBase) GetTxsSentByStatus(chain string) ([]*TxSent, error) {
 // GetTxsSentByType ...
 func (d *DataBase) GetTxsSentByType(chain string, txType TxType, swap *Swap) []*TxSent {
 	txsSent := make([]*TxSent, 0)
-
 	query := d.db.Where("chain = ? and type = ?", chain, txType)
-
 	query = query.Where("swap_id = ?", swap.SwapID)
-	// } else {
-	// 	query = query.Where("swap_id = ?", swap.WorkerChainSwapID)
-	// }
 	query.Order("id desc").Find(&txsSent)
 
 	return txsSent

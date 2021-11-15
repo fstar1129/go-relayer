@@ -5,9 +5,10 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
-	"latoken/relayer-smart-contract/src/service/workers/utils"
 	"math/big"
 	"time"
+
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/utils"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -16,21 +17,22 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sirupsen/logrus"
+	jsonrpc "github.com/ybbus/jsonrpc/v2"
 
-	"latoken/relayer-smart-contract/src/models"
-	"latoken/relayer-smart-contract/src/service/storage"
-	ethbr "latoken/relayer-smart-contract/src/service/workers/eth-compatible/abi/bridge/eth"
-	labr "latoken/relayer-smart-contract/src/service/workers/eth-compatible/abi/bridge/la"
-	es "latoken/relayer-smart-contract/src/service/workers/eth-compatible/abi/erc20Swap"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
+	ethbr "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/eth-compatible/abi/bridge/eth"
+	labr "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/eth-compatible/abi/bridge/la"
+	es "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/eth-compatible/abi/erc20Swap"
 )
 
 // Erc20Worker ...
 type Erc20Worker struct {
-	Provider         string
+	provider         string
 	chainID          string
 	logger           *logrus.Entry // logger
-	Config           *models.WorkerConfig
-	Client           *ethclient.Client
+	config           *models.WorkerConfig
+	client           *ethclient.Client
 	swapContractAddr common.Address
 }
 
@@ -65,9 +67,9 @@ func NewErc20Worker(logger *logrus.Logger, cfg *models.WorkerConfig) *Erc20Worke
 	return &Erc20Worker{
 		chainID:          cfg.ChainID,
 		logger:           logger.WithField("worker", cfg.ChainID),
-		Provider:         cfg.Provider,
-		Config:           cfg,
-		Client:           client,
+		provider:         cfg.Provider,
+		config:           cfg,
+		client:           client,
 		swapContractAddr: cfg.ContractAddr,
 	}
 }
@@ -78,13 +80,16 @@ func (w *Erc20Worker) GetChain() string {
 }
 
 // GetStartHeight returns start blockchain height from config
-func (w *Erc20Worker) GetStartHeight() int64 {
-	return w.Config.StartBlockHeight
+func (w *Erc20Worker) GetStartHeight() (int64, error) {
+	if w.config.StartBlockHeight == 0 {
+		return w.GetHeight()
+	}
+	return w.config.StartBlockHeight, nil
 }
 
 // GetConfirmNum returns numbers of blocks after them tx will be confirmed
 func (w *Erc20Worker) GetConfirmNum() int64 {
-	return w.Config.ConfirmNum
+	return w.config.ConfirmNum
 }
 
 // // GetStatus returns status of relayer account(balance eg)
@@ -95,15 +100,15 @@ func (w *Erc20Worker) GetConfirmNum() int64 {
 // 	if err != nil {
 // 		return nil, err
 // 	}
-// 	ethStatus.Allowance = QuoBigInt(allowance, GetBigIntForDecimal(w.Config.ChainDecimal)).String()
+// 	ethStatus.Allowance = QuoBigInt(allowance, GetBigIntForDecimal(w.config.ChainDecimal)).String()
 
-// 	balance, err := w.Erc20Balance(w.Config.WorkerAddr, symbol)
+// 	balance, err := w.Erc20Balance(w.config.WorkerAddr, symbol)
 // 	if err != nil {
 // 		return nil, err
 // 	}
-// 	ethStatus.Erc20Balance = QuoBigInt(balance, GetBigIntForDecimal(w.Config.ChainDecimal)).String()
+// 	ethStatus.Erc20Balance = QuoBigInt(balance, GetBigIntForDecimal(w.config.ChainDecimal)).String()
 
-// 	ethBalance, err := w.EthBalance(w.Config.WorkerAddr)
+// 	ethBalance, err := w.EthBalance(w.config.WorkerAddr)
 // 	if err != nil {
 // 		return nil, err
 // 	}
@@ -114,34 +119,48 @@ func (w *Erc20Worker) GetConfirmNum() int64 {
 
 // GetBlockAndTxs ...
 func (w *Erc20Worker) GetBlockAndTxs(height int64) (*models.BlockAndTxLogs, error) {
-	header, err := w.Client.HeaderByNumber(context.Background(), big.NewInt(height))
+	var head *Header
+	rpcClient := jsonrpc.NewClient(w.provider)
+
+	resp, err := rpcClient.Call("eth_getBlockByNumber", fmt.Sprintf("0x%x", height), false)
 	if err != nil {
+		w.logger.Errorln("while call eth_getBlockByNumber, err = ", err)
 		return nil, err
 	}
 
-	txLogs, err := w.getLogs(header.Hash())
+	if err := resp.GetObject(&head); err != nil {
+		w.logger.Errorln("while GetObject, err = ", err)
+		return nil, err
+	}
+
+	if head == nil {
+		return nil, fmt.Errorf("not found")
+	}
+
+	logs, err := w.getLogs(head.Hash)
 	if err != nil {
+		w.logger.Errorf("while getEvents(blockhash = %s), err = %v", head.Hash, err)
 		return nil, err
 	}
 
 	return &models.BlockAndTxLogs{
 		Height:          height,
-		BlockHash:       header.Hash().String(),
-		ParentBlockHash: header.ParentHash.String(),
-		BlockTime:       int64(header.Time),
-		TxLogs:          txLogs,
+		BlockHash:       head.Hash.String(),
+		ParentBlockHash: head.ParentHash.Hex(),
+		BlockTime:       int64(head.Time),
+		TxLogs:          logs,
 	}, nil
 }
 
 // GetFetchInterval ...
 func (w *Erc20Worker) GetFetchInterval() time.Duration {
-	return time.Duration(w.Config.FetchInterval) * time.Second
+	return time.Duration(w.config.FetchInterval) * time.Second
 }
 
 // getLogs ...
 func (w *Erc20Worker) getLogs(blockHash common.Hash) ([]*storage.TxLog, error) {
 	//	topics := [][]common.Hash{{DepositEventHash, ProposalEventHash, ProposalVoteHash}}
-	logs, err := w.Client.FilterLogs(context.Background(), ethereum.FilterQuery{
+	logs, err := w.client.FilterLogs(context.Background(), ethereum.FilterQuery{
 		BlockHash: &blockHash,
 		//	Topics:    topics,
 		Addresses: []common.Address{w.swapContractAddr},
@@ -152,7 +171,7 @@ func (w *Erc20Worker) getLogs(blockHash common.Hash) ([]*storage.TxLog, error) {
 
 	models := make([]*storage.TxLog, 0, len(logs))
 	for _, log := range logs {
-		fmt.Printf("WORKER(%s) NEW EVENT: %v\n\n", w.chainID, log.Topics)
+		// w.logger.Infof("WORKER(%s) NEW EVENT: %v\n\n", w.chainID, log)
 		event, err := ParseEvent(&log)
 		if err != nil {
 			w.logger.WithFields(logrus.Fields{"function": "GetLogs()"}).Errorf("parse event log error, err=%s", err)
@@ -163,16 +182,13 @@ func (w *Erc20Worker) getLogs(blockHash common.Hash) ([]*storage.TxLog, error) {
 		}
 
 		txLog := event.ToTxLog()
+
 		// if txLog.TxType == storage.TxTypeDeposit {
-		// 	txLog.SwapType = storage.SwapTypeBind
-		// 	if w.chainID == storage.LaChain {
-		// 		txLog.SwapType = storage.SwapTypeUnbind
-		// 	}
-		// } else if txLog.TxType == storage.TxTypeSpend {
-		// 	txLog.SwapType = storage.SwapTypeUnbind
-		// 	if w.chainID == storage.LaChain {
-		// 		txLog.SwapType = storage.SwapTypeBind
-		// 	}
+		// 	w.logger.Infof("Deposited\ndestination chain ID: 0x%s\nresource ID: 0x%s\ndeposit nonce: %d\nrecipient address: %s\namount address: %s\ntoken address: %s\n",
+		// 		txLog.DestinationChainID, txLog.ResourceID, txLog.DepositNonce, txLog.SenderAddr, txLog.ReceiverAddr, txLog.OutAmount, txLog.InTokenAddr)
+		// } else if txLog.TxType == storage.TxTypeClaim {
+		// 	w.logger.Infof("\nProposalEvent:\nOrigin chain ID: 0x%s\ndeposit nonce: %d\ndeposit nonce: %v\nstatus: %v\nresource ID: 0x%s\n",
+		// 		txLog.OriginСhainID, txLog.DepositNonce, txLog.SwapStatus, txLog.ResourceID, txLog.ReceiverAddr)
 		// }
 		txLog.Chain = w.chainID
 		txLog.Height = int64(log.BlockNumber)
@@ -188,7 +204,7 @@ func (w *Erc20Worker) getLogs(blockHash common.Hash) ([]*storage.TxLog, error) {
 
 // GetHeight ..
 func (w *Erc20Worker) GetHeight() (int64, error) {
-	header, err := w.Client.HeaderByNumber(context.Background(), nil)
+	header, err := w.client.HeaderByNumber(context.Background(), nil)
 	if err != nil {
 		return 0, nil
 	}
@@ -196,20 +212,19 @@ func (w *Erc20Worker) GetHeight() (int64, error) {
 }
 
 // Vote ...
-func (w *Erc20Worker) Vote(depositNonce uint64, resourceID [32]byte, data []byte) (string, error) {
-	auth, err := w.GetTransactor()
+func (w *Erc20Worker) Vote(depositNonce uint64, chainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error) {
+	auth, err := w.getTransactor()
 	if err != nil {
 		return "", err
 	}
 
-	instance, err := labr.NewBridge(w.swapContractAddr, w.Client)
+	instance, err := labr.NewBridge(w.swapContractAddr, w.client)
 	if err != nil {
 		return "", err
 	}
 
-	fmt.Println(utils.StringToBytes8(w.chainID))
-
-	tx, err := instance.VoteProposal(auth, utils.StringToBytes8(w.chainID), depositNonce, resourceID, data)
+	value, _ := new(big.Int).SetString(amount, 10)
+	tx, err := instance.VoteProposal(auth, chainID, depositNonce, resourceID, common.HexToAddress(receiptAddr), value)
 	if err != nil {
 		return "", err
 	}
@@ -223,20 +238,19 @@ func (w *Erc20Worker) Vote(depositNonce uint64, resourceID [32]byte, data []byte
 // - erc20Addr - erc20 token address, laAddr - lrc-20 token address(may to bind on pair of tokens(erc-20 and lrc-20) later on)
 // - toAddress - receiver address, which will receive minted coins
 // - amount - value of minted coins
-func (w *Erc20Worker) SpendBind(depositNonce uint64, chainID [8]byte, data []byte, resourceID [32]byte) (string, error) {
-	auth, err := w.GetTransactor()
+func (w *Erc20Worker) SpendBind(depositNonce uint64, chainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error) {
+	auth, err := w.getTransactor()
 	if err != nil {
 		return "", err
 	}
 
-	instance, err := labr.NewBridge(w.swapContractAddr, w.Client)
+	instance, err := labr.NewBridge(w.swapContractAddr, w.client)
 	if err != nil {
 		return "", err
 	}
 
-	fmt.Println(chainID, depositNonce, data, resourceID)
-
-	tx, err := instance.ExecuteProposal(auth, chainID, depositNonce, data, resourceID)
+	value, _ := new(big.Int).SetString(amount, 10)
+	tx, err := instance.ExecuteProposal(auth, chainID, depositNonce, resourceID, common.HexToAddress(receiptAddr), value)
 	if err != nil {
 		return "", err
 	}
@@ -249,18 +263,20 @@ func (w *Erc20Worker) SpendBind(depositNonce uint64, chainID [8]byte, data []byt
 // - swapID- swap's id
 // - toAddress - receiver address, which will receive minted coins
 // - amount - value of minted coins
-func (w *Erc20Worker) SpendUnbind(depositNonce uint64, data []byte, resourceID [32]byte) (string, error) {
-	auth, err := w.GetTransactor()
+func (w *Erc20Worker) SpendUnbind(depositNonce uint64, chainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error) {
+	auth, err := w.getTransactor()
 	if err != nil {
 		return "", err
 	}
 
-	instance, err := ethbr.NewBridge(w.swapContractAddr, w.Client)
+	instance, err := ethbr.NewBridge(w.swapContractAddr, w.client)
 	if err != nil {
 		return "", err
 	}
 
-	tx, err := instance.ExecuteProposal(auth, utils.StringToBytes8(w.chainID), depositNonce, data, resourceID)
+	value, _ := new(big.Int).SetString(amount, 10)
+	tx, err := instance.ExecuteProposal(auth, chainID, depositNonce, resourceID,
+		common.HexToAddress(receiptAddr), value)
 	if err != nil {
 		return "", err
 	}
@@ -270,19 +286,8 @@ func (w *Erc20Worker) SpendUnbind(depositNonce uint64, data []byte, resourceID [
 
 // GetSentTxStatus ...
 func (w *Erc20Worker) GetSentTxStatus(hash string) storage.TxStatus {
-	_, isPending, err := w.Client.TransactionByHash(context.Background(), common.HexToHash(hash))
+	txReceipt, err := w.client.TransactionReceipt(context.Background(), common.HexToHash(hash))
 	if err != nil {
-		w.logger.Errorln("GetSentTxStatus, err = ", err)
-		return storage.TxSentStatusNotFound
-	}
-
-	if isPending {
-		return storage.TxSentStatusPending
-	}
-
-	txReceipt, err := w.Client.TransactionReceipt(context.Background(), common.HexToHash(hash))
-	if err != nil {
-		w.logger.Errorln("GetSentTxStatus, err = ", err)
 		return storage.TxSentStatusNotFound
 	}
 
@@ -295,7 +300,7 @@ func (w *Erc20Worker) GetSentTxStatus(hash string) storage.TxStatus {
 
 // HasSwap ...
 func (w *Erc20Worker) HasSwap(swapID common.Hash) (bool, error) {
-	instance, err := es.NewERC20Swap(w.swapContractAddr, w.Client)
+	instance, err := es.NewERC20Swap(w.swapContractAddr, w.client)
 	if err != nil {
 		return false, err
 	}
@@ -305,7 +310,7 @@ func (w *Erc20Worker) HasSwap(swapID common.Hash) (bool, error) {
 
 // Refundable ...
 func (w *Erc20Worker) Refundable(swapID common.Hash) (bool, error) {
-	instance, err := es.NewERC20Swap(w.swapContractAddr, w.Client)
+	instance, err := es.NewERC20Swap(w.swapContractAddr, w.client)
 	if err != nil {
 		return false, err
 	}
@@ -316,7 +321,7 @@ func (w *Erc20Worker) Refundable(swapID common.Hash) (bool, error) {
 
 // Claimable ...
 func (w *Erc20Worker) Claimable(swapID common.Hash) (bool, error) {
-	instance, err := es.NewERC20Swap(w.swapContractAddr, w.Client)
+	instance, err := es.NewERC20Swap(w.swapContractAddr, w.client)
 	if err != nil {
 		return false, err
 	}
@@ -325,40 +330,71 @@ func (w *Erc20Worker) Claimable(swapID common.Hash) (bool, error) {
 	return claimable, err
 }
 
+func (w *Erc20Worker) GetTxCountLatest() (uint64, error) {
+	var result uint64
+	rpcClient := jsonrpc.NewClient(w.provider)
+
+	resp, err := rpcClient.Call("eth_getTransactionCount", w.config.WorkerAddr.Hex(), "latest")
+	if err != nil {
+		return 0, err
+	}
+
+	if err := resp.GetObject(&result); err != nil {
+		fmt.Println(err)
+		return 0, err
+	}
+
+	return result, nil
+}
+
 // GetTransactor ...
-func (w *Erc20Worker) GetTransactor() (*bind.TransactOpts, error) {
-	privateKey, err := utils.GetPrivateKey(w.Config)
+func (w *Erc20Worker) getTransactor() (auth *bind.TransactOpts, err error) {
+	privateKey, err := utils.GetPrivateKey(w.config)
 	if err != nil {
 		return nil, err
 	}
 
-	nonce, err := w.Client.PendingNonceAt(context.Background(), w.Config.WorkerAddr)
-	if err != nil {
-		return nil, err
+	var nonce uint64
+	if w.chainID == storage.LaChain {
+		nonce, err = w.GetTxCountLatest()
+		if err != nil {
+			return nil, err
+		}
+
+		auth, err = bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(int64(27)))
+		if err != nil {
+			return nil, err
+		}
+
+	} else {
+		nonce, err = w.client.PendingNonceAt(context.Background(), w.config.WorkerAddr)
+		if err != nil {
+			return nil, err
+		}
+		auth = bind.NewKeyedTransactor(privateKey)
 	}
 
-	auth := bind.NewKeyedTransactor(privateKey)
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)                // in wei
-	auth.GasLimit = uint64(w.Config.GasLimit) // in units
-	auth.GasPrice = w.Config.GasPrice
+	auth.GasLimit = uint64(w.config.GasLimit) // in units
+	auth.GasPrice = w.config.GasPrice
 
 	return auth, nil
 }
 
 // EthBalance ...
 func (w *Erc20Worker) EthBalance(address common.Address) (*big.Int, error) {
-	return w.Client.BalanceAt(context.Background(), address, nil)
+	return w.client.BalanceAt(context.Background(), address, nil)
 }
 
 // GetWorkerAddress ...
 func (w *Erc20Worker) GetWorkerAddress() string {
-	return w.Config.WorkerAddr.String()
+	return w.config.WorkerAddr.String()
 }
 
 // GetColdWalletAddress ...
 func (w *Erc20Worker) GetColdWalletAddress() string {
-	return w.Config.ColdWalletAddr.String()
+	return w.config.ColdWalletAddr.String()
 }
 
 // IsSameAddress ...
@@ -370,46 +406,6 @@ func (w *Erc20Worker) IsSameAddress(addrA string, addrB string) bool {
 func (w *Erc20Worker) SendAmount(address string, amount *big.Int) (string, error) {
 	return "", fmt.Errorf("not implemented") // TODO
 }
-
-// // GetHTLTEvent ...
-// func (w *Erc20Worker) GetHTLTEvent(swapID common.Hash) (*HTLTEvent, error) {
-// 	topics := [][]common.Hash{{HTLTEventHash}, {}, {}, {swapID}}
-// 	logs, err := w.Client.FilterLogs(context.Background(), ethereum.FilterQuery{
-// 		Topics: topics,
-// 	})
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	if len(logs) == 0 {
-// 		return nil, fmt.Errorf("swap id does not exist, swap_id=%s", swapID.String())
-// 	}
-
-// 	event, err := ParseHTLTEvent(&w.abi, &logs[0])
-// 	if err != nil {
-// 		w.logger.WithFields(logrus.Fields{"function": "GetLogs()"}).Errorln(err)
-// 		return nil, err
-// 	}
-// 	htltEvent := event.(HTLTEvent)
-
-// 	return &htltEvent, nil
-// }
-
-// // GetSwap ...
-// func (w *Erc20Worker) GetSwap(swapID common.Hash) (*models.SwapRequest, error) {
-// 	htltEvent, err := w.GetHTLTEvent(swapID)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return &models.SwapRequest{
-// 		ID:               swapID,
-// 		ExpireHeight:     htltEvent.ExpireHeight.Int64(),
-// 		SenderAddress:    htltEvent.MsgSender.String(),
-// 		RecipientAddress: htltEvent.LaRecipientAddr.String(),
-// 		OutAmount:        htltEvent.OutAmount,
-// 	}, nil
-// }
 
 func initTokenAddresses(client *ethclient.Client, addresses []common.Address) (tokenAddresses map[string]common.Address) {
 	// for _, address := range addresses {
@@ -439,7 +435,7 @@ func initTokenAddresses(client *ethclient.Client, addresses []common.Address) (t
 // 		return "", err
 // 	}
 
-// 	instance, err := es.NewERC20Swap(w.swapContractAddr, w.Client)
+// 	instance, err := es.NewERC20Swap(w.swapContractAddr, w.client)
 // 	if err != nil {
 // 		return "", err
 // 	}
@@ -463,7 +459,7 @@ func initTokenAddresses(client *ethclient.Client, addresses []common.Address) (t
 // 		return "", err
 // 	}
 
-// 	instance, err := bt.NewManager(w.swapContractAddr, w.Client)
+// 	instance, err := bt.NewManager(w.swapContractAddr, w.client)
 // 	if err != nil {
 // 		return "", err
 // 	}
@@ -483,7 +479,7 @@ func initTokenAddresses(client *ethclient.Client, addresses []common.Address) (t
 // 		return "", err
 // 	}
 
-// 	instance, err := bt.NewManager(w.swapContractAddr, w.Client)
+// 	instance, err := bt.NewManager(w.swapContractAddr, w.client)
 // 	if err != nil {
 // 		return "", err
 // 	}
@@ -498,44 +494,44 @@ func initTokenAddresses(client *ethclient.Client, addresses []common.Address) (t
 
 // // GetBalanceAlertMsg ...
 // func (w *Erc20Worker) GetBalanceAlertMsg(tokenSymbol string) (string, error) {
-// 	if w.Config.EthBalanceAlertThreshold.Cmp(big.NewInt(0)) == 0 &&
-// 		w.Config.TokenBalanceAlertThreshold.Cmp(big.NewInt(0)) == 0 &&
-// 		w.Config.AllowanceBalanceAlertThreshold.Cmp(big.NewInt(0)) == 0 {
+// 	if w.config.EthBalanceAlertThreshold.Cmp(big.NewInt(0)) == 0 &&
+// 		w.config.TokenBalanceAlertThreshold.Cmp(big.NewInt(0)) == 0 &&
+// 		w.config.AllowanceBalanceAlertThreshold.Cmp(big.NewInt(0)) == 0 {
 // 		return "", nil
 // 	}
 
 // 	alertMsg := ""
-// 	if w.Config.EthBalanceAlertThreshold.Cmp(big.NewInt(0)) > 0 {
-// 		ethBalance, err := w.EthBalance(w.Config.WorkerAddr)
+// 	if w.config.EthBalanceAlertThreshold.Cmp(big.NewInt(0)) > 0 {
+// 		ethBalance, err := w.EthBalance(w.config.WorkerAddr)
 // 		if err != nil {
 // 			return "", err
 // 		}
 
-// 		if ethBalance.Cmp(w.Config.EthBalanceAlertThreshold) < 0 {
+// 		if ethBalance.Cmp(w.config.EthBalanceAlertThreshold) < 0 {
 // 			alertMsg = alertMsg + fmt.Sprintf("eth balance(%s) is less than %s\n",
-// 				ethBalance.String(), w.Config.EthBalanceAlertThreshold.String())
+// 				ethBalance.String(), w.config.EthBalanceAlertThreshold.String())
 // 		}
 // 	}
 
-// 	if w.Config.AllowanceBalanceAlertThreshold.Cmp(big.NewInt(0)) > 0 {
+// 	if w.config.AllowanceBalanceAlertThreshold.Cmp(big.NewInt(0)) > 0 {
 // 		allowance, err := w.Allowance(tokenSymbol)
 // 		if err != nil {
 // 			return "", err
 // 		}
-// 		if allowance.Cmp(w.Config.AllowanceBalanceAlertThreshold) < 0 {
+// 		if allowance.Cmp(w.config.AllowanceBalanceAlertThreshold) < 0 {
 // 			alertMsg = alertMsg + fmt.Sprintf("token allowance balance(%s) is less than %s\n",
-// 				allowance.String(), w.Config.AllowanceBalanceAlertThreshold.String())
+// 				allowance.String(), w.config.AllowanceBalanceAlertThreshold.String())
 // 		}
 // 	}
 
-// 	if w.Config.TokenBalanceAlertThreshold.Cmp(big.NewInt(0)) > 0 {
-// 		tokenBalance, err := w.Erc20Balance(w.Config.WorkerAddr, "") // TODO
+// 	if w.config.TokenBalanceAlertThreshold.Cmp(big.NewInt(0)) > 0 {
+// 		tokenBalance, err := w.Erc20Balance(w.config.WorkerAddr, "") // TODO
 // 		if err != nil {
 // 			return "", err
 // 		}
-// 		if tokenBalance.Cmp(w.Config.TokenBalanceAlertThreshold) < 0 {
+// 		if tokenBalance.Cmp(w.config.TokenBalanceAlertThreshold) < 0 {
 // 			alertMsg = alertMsg + fmt.Sprintf("token balance(%s) is less than %s",
-// 				tokenBalance.String(), w.Config.TokenBalanceAlertThreshold.String())
+// 				tokenBalance.String(), w.config.TokenBalanceAlertThreshold.String())
 // 		}
 // 	}
 

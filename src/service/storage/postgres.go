@@ -54,19 +54,3 @@ func InitStorage(db *gorm.DB) (*DataBase, error) {
 
 	return &DataBase{db: db}, nil
 }
-
-// // ExpireUserHTLT ...
-// func (d *DataBase) ExpireUserHTLT(chainID string) error {
-// 	curBlock, err := d.GetCurrentBlockLog(chainID)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return d.db.Model(Swap{}).Where("type = ? and status in (?) and expire_height < ?",
-// 		SwapTypeBind, []SwapStatus{SwapStatusHTLTSentFailed,
-// 			SwapStatusClaimSentFailed, SwapStatusRejected}, curBlock.Height).Update(
-// 		map[string]interface{}{
-// 			"status":      SwapStatusHTLTExpired,
-// 			"update_time": time.Now().Unix(),
-// 		}).Error
-// }

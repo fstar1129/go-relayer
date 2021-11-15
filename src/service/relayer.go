@@ -1,31 +1,18 @@
 package rlr
 
 import (
-	"fmt"
-	watcher "latoken/relayer-smart-contract/src/service/blockchains-watcher"
-	"latoken/relayer-smart-contract/src/service/storage"
-	workers "latoken/relayer-smart-contract/src/service/workers"
-	"latoken/relayer-smart-contract/src/service/workers/eth-compatibLe"
-	"math/big"
 	"sync"
 	"time"
+
+	watcher "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/blockchains-watcher"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
+	workers "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/eth-compatible"
 
 	"github.com/jinzhu/gorm"
 	"github.com/sirupsen/logrus"
 
-	"latoken/relayer-smart-contract/src/models"
-)
-
-var laChainURL = "http://localhost:7545"
-
-var (
-	WorkerChainRatio            *big.Float = &big.Float{}
-	BnbMinRemainHeight          int64      = 6
-	WorkerChainExpireHeightSpan int64      = 7
-	WorkerChainMaxrOutAmount    *big.Int   = &big.Int{}
-	WorkerChainDecimal                     = 2
-
-	WorkerChainConfirmNum = 8
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
 )
 
 // RelayerSRV ...
@@ -50,11 +37,11 @@ func CreateNewRelayerSRV(logger *logrus.Logger, gormDB *gorm.DB, laConfig, ethCo
 	inst := RelayerSRV{
 		logger:   logger,
 		storage:  db,
-		laWorker: eth.NewErc20Worker(logrus.StandardLogger(), laConfig),
+		laWorker: eth.NewErc20Worker(logger, laConfig),
 		Workers:  make(map[string]workers.IWorker),
 	}
 	// create erc20 worker
-	inst.Workers["ERC20"] = eth.NewErc20Worker(logrus.StandardLogger(), ethConfig)
+	inst.Workers["ERC20"] = eth.NewErc20Worker(logger, ethConfig)
 	// // create la worker
 	inst.Workers[storage.LaChain] = inst.laWorker
 
@@ -74,7 +61,7 @@ func (r *RelayerSRV) Run() {
 	r.Watcher.Run()
 	go r.emitChainSendClaim(storage.SwapTypeUnbind)
 	go r.emitChainSendClaim(storage.SwapTypeBind)
-	// // run Worker workers
+	// run Worker workers
 	for _, worker := range r.Workers {
 		go r.ConfirmWorkerTx(worker)
 		go r.emitChainSendSpend(worker)
@@ -105,32 +92,23 @@ func (r *RelayerSRV) ConfirmWorkerTx(worker workers.IWorker) {
 				// reject swap request if receiver addr and worker chain addr both are r addr
 				if worker.IsSameAddress(txLog.ReceiverAddr, worker.GetWorkerAddress()) &&
 					!r.laWorker.IsSameAddress(txLog.WorkerChainAddr, r.laWorker.GetWorkerAddress()) {
-
-					fmt.Println("THE SAME")
+					r.logger.Warnln("THE SAME")
 				}
 
-				// CHECK DATA HASH
-
-				// randomNumberHash := common.HexToHash(txLog.RandomNumberHash)
-				// laChainSwapID, err := r.laWorker.CalcSwapID(randomNumberHash, r.laWorker.GetWorkerAddress(), txLog.SenderAddr)
-				// if err != nil {
-				// 	r.logger.Errorf("calculate swap id parse error, random_number_hash=%s, sender_addr=%s, Worker_swap_id=%s", randomNumberHash.String(), txLog.SenderAddr, txLog.SwapID)
-				// 	continue
-				// }
-				fmt.Println("NEW!!!")
+				r.logger.Infoln("NEW SWAP")
 				newSwap := &storage.Swap{
-					Type:           swapType,
-					SwapID:         txLog.SwapID,
-					SenderAddr:     txLog.SenderAddr,
-					ReceiverAddr:   txLog.ReceiverAddr,
-					ERC20TokenAddr: txLog.ERC20TokenAddr,
-					DepositNonce:   txLog.DepositNonce,
-					ResourceID:     txLog.ResourceID,
-					DataHash:       txLog.DataHash,
-					СhainID:        txLog.DestinationChainID,
-					Height:         txLog.Height,
-					Status:         storage.SwapStatusDepositConfirmed,
-					CreateTime:     time.Now().Unix(),
+					Type:         swapType,
+					SwapID:       txLog.SwapID,
+					SenderAddr:   txLog.SenderAddr,
+					ReceiverAddr: txLog.ReceiverAddr,
+					InTokenAddr:  txLog.InTokenAddr,
+					DepositNonce: txLog.DepositNonce,
+					ResourceID:   txLog.ResourceID,
+					OutAmount:    txLog.OutAmount,
+					ChainID:      txLog.DestinationChainID,
+					Height:       txLog.Height,
+					Status:       storage.SwapStatusDepositConfirmed,
+					CreateTime:   time.Now().Unix(),
 				}
 				newSwaps = append(newSwaps, newSwap)
 			}
@@ -176,7 +154,7 @@ func (r *RelayerSRV) handleTxSent(chain string, swap *storage.Swap, txType stora
 	failedStatus storage.SwapStatus) {
 	txsSent := r.storage.GetTxsSentByType(chain, txType, swap)
 	if len(txsSent) == 0 {
-		r.storage.UpdateSwapStatus(swap, backwardStatus, swap.DataHash, "")
+		r.storage.UpdateSwapStatus(swap, backwardStatus, "")
 		return
 	}
 	latestTx := txsSent[0]
@@ -189,15 +167,15 @@ func (r *RelayerSRV) handleTxSent(chain string, swap *storage.Swap, txType stora
 			txStatus == storage.TxSentStatusInit ||
 			txStatus == storage.TxSentStatusPending) {
 
-		fmt.Printf("timeElapsed(%d) | autoRetryTimeout(%d) \n", timeElapsed, autoRetryTimeout)
+		r.logger.Warnln("timeElapsed(%d) | autoRetryTimeout(%d) \n", timeElapsed, autoRetryTimeout)
 		if len(txsSent) >= autoRetryNum {
-			r.storage.UpdateSwapStatus(swap, failedStatus, "", "")
+			r.storage.UpdateSwapStatus(swap, failedStatus, "")
 		} else {
-			r.storage.UpdateSwapStatus(swap, backwardStatus, "", "")
+			r.storage.UpdateSwapStatus(swap, backwardStatus, "")
 		}
 		r.storage.UpdateTxSentStatus(latestTx, storage.TxSentStatusLost)
 	} else if txStatus == storage.TxSentStatusFailed {
-		r.storage.UpdateSwapStatus(swap, failedStatus, "", "")
+		r.storage.UpdateSwapStatus(swap, failedStatus, "")
 	}
 }
 

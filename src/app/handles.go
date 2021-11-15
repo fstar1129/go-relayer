@@ -3,8 +3,6 @@ package app
 import (
 	"encoding/json"
 	"net/http"
-
-	"latoken/relayer-smart-contract/src/common"
 )
 
 const numPerPage = 100
@@ -35,19 +33,19 @@ func (a *App) Endpoints(w http.ResponseWriter, r *http.Request) {
 
 // StatusHandler ...
 func (a *App) StatusHandler(w http.ResponseWriter, r *http.Request) {
-	status, err := a.relayer.Status()
-	if err != nil {
-		common.ResponError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	// jsonBytes, err := json.MarshalIndent(status, "", "    ")
+	// status, err := a.relayer.Status()
 	// if err != nil {
 	// 	common.ResponError(w, http.StatusInternalServerError, err.Error())
 	// 	return
 	// }
 
-	common.ResponJSON(w, http.StatusOK, status)
+	// // jsonBytes, err := json.MarshalIndent(status, "", "    ")
+	// // if err != nil {
+	// // 	common.ResponError(w, http.StatusInternalServerError, err.Error())
+	// // 	return
+	// // }
+
+	// common.ResponJSON(w, http.StatusOK, status)
 }
 
 // // FailedSwapsHandler ...

@@ -16,10 +16,10 @@ package eth
 // 	"github.com/ethereum/go-ethereum/ethclient"
 // 	"github.com/sirupsen/logrus"
 
-// 	"latoken/relayer-smart-contract/src/models"
-// 	"latoken/relayer-smart-contract/src/service/storage"
-// 	da "latoken/relayer-smart-contract/src/service/workers/eth-compatible/abi/erc20Swap"
-// 	"latoken/relayer-smart-contract/src/service/workers/utils"
+// 	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
+// 	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
+// 	da "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/eth-compatible/abi/erc20Swap"
+// 	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/utils"
 // )
 
 // // Worker ...
