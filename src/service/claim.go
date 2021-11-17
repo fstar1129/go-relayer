@@ -22,7 +22,7 @@ func (r *RelayerSRV) emitChainSendClaim(swapType storage.SwapType) {
 					r.logger.Errorf("submit claim failed: %s", err)
 				}
 			} else {
-				r.handleTxSent(r.laWorker.GetChain(), swap, storage.TxTypeClaim,
+				r.handleTxSent(r.laWorker.GetChainName(), swap, storage.TxTypeClaim,
 					storage.SwapStatusClaimConfirmed, storage.SwapStatusClaimSentFailed)
 			}
 		}
@@ -34,7 +34,7 @@ func (r *RelayerSRV) emitChainSendClaim(swapType storage.SwapType) {
 // ethSendClaim ...
 func (r *RelayerSRV) sendClaim(direction storage.SwapType, worker workers.IWorker, swap *storage.Swap) (string, error) {
 	txSent := &storage.TxSent{
-		Chain:      worker.GetChain(),
+		Chain:      worker.GetChainName(),
 		Type:       storage.TxTypeClaim,
 		SwapID:     swap.SwapID,
 		CreateTime: time.Now().Unix(),
@@ -55,7 +55,7 @@ func (r *RelayerSRV) sendClaim(direction storage.SwapType, worker workers.IWorke
 	txSent.TxHash = txHash
 	r.storage.UpdateSwapStatus(swap, storage.SwapStatusClaimSent, "")
 
-	r.logger.Infof("send claim tx success | chain=%s, swap_ID=%s, tx_hash=%s", worker.GetChain(),
+	r.logger.Infof("send claim tx success | chain=%s, swap_ID=%s, tx_hash=%s", worker.GetChainName(),
 		swap.SwapID, txSent.TxHash)
 	// create new tx(claimed)
 	r.storage.CreateTxSent(txSent)

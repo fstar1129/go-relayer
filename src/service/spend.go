@@ -12,7 +12,7 @@ import (
 // emitChainSendSpend ...
 func (r *RelayerSRV) emitChainSendSpend(worker workers.IWorker) {
 	swapType := storage.SwapTypeUnbind
-	if worker.GetChain() == storage.LaChain {
+	if worker.GetChainName() == storage.LaChain {
 		swapType = storage.SwapTypeBind
 	}
 
@@ -27,7 +27,7 @@ func (r *RelayerSRV) emitChainSendSpend(worker workers.IWorker) {
 					r.logger.Errorf("submit spend failed: %s", err)
 				}
 			} else {
-				r.handleTxSent(worker.GetChain(), swap, storage.TxTypeSpend,
+				r.handleTxSent(worker.GetChainName(), swap, storage.TxTypeSpend,
 					storage.SwapStatusSpendConfirmed, storage.SwapStatusSpendSentFailed)
 			}
 		}
@@ -37,14 +37,14 @@ func (r *RelayerSRV) emitChainSendSpend(worker workers.IWorker) {
 
 func (r *RelayerSRV) sendSpend(direction storage.SwapType, worker workers.IWorker, swap *storage.Swap) (txHash string, err error) {
 	txSent := &storage.TxSent{
-		Chain:      worker.GetChain(),
+		Chain:      worker.GetChainName(),
 		Type:       storage.TxTypeSpend,
 		SwapID:     swap.SwapID,
 		CreateTime: time.Now().Unix(),
 	}
 
 	r.logger.Infof("spend parameters: depositNonce(%d) | sender(%s) | outAmount(%s) | resourceID(%s) | chainID(%s)\n",
-		swap.DepositNonce, swap.SenderAddr, swap.OutAmount, swap.ResourceID, worker.GetChain())
+		swap.DepositNonce, swap.SenderAddr, swap.OutAmount, swap.ResourceID, worker.GetChainName())
 
 	if direction == storage.SwapTypeBind {
 		txHash, err = worker.SpendBind(swap.DepositNonce, utils.StringToBytes8(swap.ChainID), utils.StringToBytes32(swap.ResourceID),
@@ -62,7 +62,7 @@ func (r *RelayerSRV) sendSpend(direction storage.SwapType, worker workers.IWorke
 	}
 	txSent.TxHash = txHash
 	r.storage.UpdateSwapStatus(swap, storage.SwapStatusSpendSent, "")
-	r.logger.Infof("send spend tx success, chain=%s, swap_ID=%s, tx_hash=%s", worker.GetChain(), swap.SwapID, txSent.TxHash)
+	r.logger.Infof("send spend tx success, chain=%s, swap_ID=%s, tx_hash=%s", worker.GetChainName(), swap.SwapID, txSent.TxHash)
 	// create new tx(spend)
 	r.storage.CreateTxSent(txSent)
 

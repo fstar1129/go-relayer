@@ -21,14 +21,6 @@ type RelayerStatus struct {
 	Workers map[string]WorkerStatus `json:"workers"`
 }
 
-// WorkerStatus ...
-type WorkerStatus struct {
-	Height             int64       `json:"height"`
-	SyncHeight         int64       `json:"sync_height"`
-	LastBlockFetchedAt time.Time   `json:"last_block_fetched_at"`
-	Status             interface{} `json:"status"`
-}
-
 // BlockAndTxLogs ...
 type BlockAndTxLogs struct {
 	Height          int64
@@ -53,7 +45,8 @@ type StorageConfig struct {
 // WorkerConfig ...
 type WorkerConfig struct {
 	NetworkType                    string         `json:"type"`
-	ChainID                        string         `json:"chain_id"`
+	ChainName                      string         `json:"chain_name"`
+	ChainID                        int64          `json:"chain_id"`
 	User                           string         `json:"user"`
 	Password                       string         `json:"password"`
 	SwapType                       string         `json:"swap_type"`
@@ -72,4 +65,30 @@ type WorkerConfig struct {
 	ChainDecimal                   int            `json:"chain_decimal"`
 	ConfirmNum                     int64          `json:"confirm_num"`
 	StartBlockHeight               int64          `json:"start_block_height"`
+}
+
+// SwapStatus ...
+type SwapStatus struct {
+	Chain   string `json:"chain"`
+	Sender  string `json:"sender"`
+	Receipt string `json:"receipt"`
+	Amount  string `json:"amount"`
+}
+
+// StatusResponce ...
+type StatusResponce struct {
+	Workers []WorkerStatus `json:"workers"`
+}
+
+// WorkerStatus ...
+type WorkerStatus struct {
+	Height             int64         `json:"height"`
+	SyncHeight         int64         `json:"sync_height"`
+	LastBlockFetchedAt time.Time     `json:"last_block_fetched_at"`
+	Account            WorkerAccount `json:"account"`
+}
+
+// WorkerAccount ...
+type WorkerAccount struct {
+	Address string `json:"address"`
 }

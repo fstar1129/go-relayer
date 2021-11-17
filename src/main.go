@@ -37,7 +37,7 @@ func main() {
 	logger.SetLevel(level)
 
 	// laworker := eth.NewErc20Worker(logger, laCfg)
-	// laworker.GetBlockAndTxs(146418)
+	// laworker.GetBlockAndTxs(168078)
 
 	// return
 

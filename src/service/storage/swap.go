@@ -23,6 +23,20 @@ func (d *DataBase) GetSwapsByTypeAndStatuses(swapType SwapType, statuses []SwapS
 	return swaps
 }
 
+// GetSwapByStatus ...
+func (d *DataBase) GetSwapByStatus(swapType SwapType, sender, receipt string, amount string) (*Swap, error) {
+	swap := &Swap{}
+	if err := d.db.Where("type = ? and sender_addr = ? and receiver_addr = ? and out_amount = ? and status in (?)",
+		swapType, sender, receipt, amount,
+		[]SwapStatus{SwapStatusPassedConfirmed, SwapStatusClaimSentFailed, SwapStatusSpendSent,
+			SwapStatusSpendSentFailed, SwapStatusSpendConfirmed}).
+		Find(&swap).Error; err != nil {
+		return nil, err
+	}
+
+	return swap, nil
+}
+
 // UpdateSwapStatus ...
 func (d *DataBase) UpdateSwapStatus(swap *Swap, status SwapStatus, rOutAmount string) {
 	toUpdate := map[string]interface{}{

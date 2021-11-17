@@ -9,8 +9,10 @@ import (
 
 // IWorker ...
 type IWorker interface {
-	// GetChain returns unique name of the chain(like LA, ETH and etc)
-	GetChain() string
+	// GetChainName returns unique name of the chain(like LA, ETH and etc)
+	GetChainName() string
+	// GetChainID returns unique id of the chain(like 26, 27, 80001 and etc)
+	GetChainID() int64
 	// GetWokrerAddress returns worker address
 	GetWorkerAddress() string
 	// GetStartHeight returns blockchain start height for watcher
@@ -32,7 +34,7 @@ type IWorker interface {
 	// // GetBalance returns balance of swap token for any address
 	// GetBalance(address, tokenSymbol string) (*big.Int, error)
 	// // GetStatus returns status of relayer account(balance eg)
-	// GetStatus(tokenSymbol string) (interface{}, error)
+	GetStatus() (*models.WorkerStatus, error)
 	// // GetBalanceAlertMsg returns balance alert message if necessary, like account balance is less than amount in config
 	// GetBalanceAlertMsg(tokenSymbol string) (string, error)
 	// IsSameAddress returns is addrA the same with addrB

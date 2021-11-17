@@ -41,7 +41,7 @@ func CreateNewRelayerSRV(logger *logrus.Logger, gormDB *gorm.DB, laConfig, ethCo
 		Workers:  make(map[string]workers.IWorker),
 	}
 	// create erc20 worker
-	inst.Workers["ERC20"] = eth.NewErc20Worker(logger, ethConfig)
+	inst.Workers[storage.EthChain] = eth.NewErc20Worker(logger, ethConfig)
 	// // create la worker
 	inst.Workers[storage.LaChain] = inst.laWorker
 
@@ -69,10 +69,51 @@ func (r *RelayerSRV) Run() {
 	}
 }
 
+func (r *RelayerSRV) GetSwapStatus(req *models.SwapStatus) (storage.SwapStatus, error) {
+	swapType := storage.SwapTypeUnbind
+	if req.Chain == storage.LaChain {
+		swapType = storage.SwapTypeBind
+	}
+
+	swap, err := r.storage.GetSwapByStatus(swapType, req.Sender, req.Receipt, req.Amount)
+	if err != nil {
+		// log
+		r.logger.Errorln(err)
+		return "", err
+	}
+
+	if swap != nil {
+		return swap.Status, nil
+	}
+
+	return "", nil
+}
+
+// Status ...
+func (r *RelayerSRV) StatusOfWorkers() (map[string]*models.WorkerStatus, error) {
+	// get blockchain heights from workers and from database
+	workers := make(map[string]*models.WorkerStatus)
+	for _, w := range r.Workers {
+		status, err := w.GetStatus()
+		if err != nil {
+			r.logger.Errorf("While get status for worker = %s, err = %v", w.GetChainName(), err)
+			return nil, err
+		}
+		workers[w.GetChainName()] = status
+	}
+
+	for name, w := range workers {
+		blocks := r.storage.GetCurrentBlockLog(name)
+		w.SyncHeight = blocks.Height
+	}
+
+	return workers, nil
+}
+
 // ConfirmWorkerTx ...
 func (r *RelayerSRV) ConfirmWorkerTx(worker workers.IWorker) {
 	for {
-		txLogs, err := r.storage.FindTxLogs(worker.GetChain(), worker.GetConfirmNum())
+		txLogs, err := r.storage.FindTxLogs(worker.GetChainName(), worker.GetConfirmNum())
 		if err != nil {
 			r.logger.Errorf("ConfirmWorkerTx(), err = %s", err)
 			time.Sleep(10 * time.Second)
@@ -116,7 +157,7 @@ func (r *RelayerSRV) ConfirmWorkerTx(worker workers.IWorker) {
 		}
 
 		//
-		if err := r.storage.ConfirmWorkerTx(worker.GetChain(), txLogs, txHashes, newSwaps); err != nil {
+		if err := r.storage.ConfirmWorkerTx(worker.GetChainName(), txLogs, txHashes, newSwaps); err != nil {
 			r.logger.Errorf("compensate new swap tx error, err=%s", err)
 		}
 
@@ -134,7 +175,7 @@ func (r *RelayerSRV) CheckTxSentRoutine(worker workers.IWorker) {
 
 // CheckTxSent ...
 func (r *RelayerSRV) CheckTxSent(worker workers.IWorker) {
-	txsSent, err := r.storage.GetTxsSentByStatus(worker.GetChain())
+	txsSent, err := r.storage.GetTxsSentByStatus(worker.GetChainName())
 	if err != nil {
 		r.logger.WithFields(logrus.Fields{"function": "CheckTxSent() | GetTxsSentByStatus()"}).Errorln(err)
 		return

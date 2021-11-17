@@ -70,13 +70,13 @@ const (
 	SwapStatusSpendConfirmed  SwapStatus = "SPEND_CONFIRMED"
 	SwapStatusSpendSentFailed SwapStatus = "SPEND_SENT_FAILED"
 	// // REFUND
-	SwapStatusWorkerRefundSent       SwapStatus = "WORKER_REFUND_SENT"
-	SwapStatusWorkerRefundConfirmed  SwapStatus = "WORKER_REFUND_CONFIRMED"
-	SwapStatusWorkerRefundSentFailed SwapStatus = "WORKER_REFUND_SENT_FAILED"
-	// REFUND
-	SwapStatusLaRefundSent       SwapStatus = "LA_REFUND_SENT"
-	SwapStatusLaRefundConfirmed  SwapStatus = "LA_REFUND_CONFIRMED"
-	SwapStatusLaRefundSentFailed SwapStatus = "LA_REFUND_SENT_FAILED"
+	// SwapStatusWorkerRefundSent       SwapStatus = "WORKER_REFUND_SENT"
+	// SwapStatusWorkerRefundConfirmed  SwapStatus = "WORKER_REFUND_CONFIRMED"
+	// SwapStatusWorkerRefundSentFailed SwapStatus = "WORKER_REFUND_SENT_FAILED"
+	// // REFUND
+	// SwapStatusLaRefundSent       SwapStatus = "LA_REFUND_SENT"
+	// SwapStatusLaRefundConfirmed  SwapStatus = "LA_REFUND_CONFIRMED"
+	// SwapStatusLaRefundSentFailed SwapStatus = "LA_REFUND_SENT_FAILED"
 
 	SwapStatusRejected SwapStatus = "REJECTED"
 )

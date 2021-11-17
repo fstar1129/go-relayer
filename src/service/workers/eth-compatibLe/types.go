@@ -6,14 +6,12 @@ import (
 	"math/big"
 	"strings"
 
-	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
-	ethbr "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/eth-compatible/abi/bridge/eth"
-	labr "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/eth-compatible/abi/bridge/la"
-
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
+	labr "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/eth-compatible/abi/bridge/la"
 )
 
 ////
@@ -70,14 +68,18 @@ type ContractEvent interface {
 
 // DepositEvent represents a Deposit event raised by the Bridge.sol contract.
 type DepositEvent struct {
-	DestinationChainID []byte
-	ResourceID         []byte
+	DestinationChainID [8]byte
+	ResourceID         [32]byte
 	DepositNonce       uint64
 	Depositor          common.Address
 	RecipientAddress   common.Address
 	TokenAddress       common.Address
 	Amount             *big.Int
 }
+
+// resource id: 000000000000000000000000000000c76ebe4a02bbc34786d860b355f5a5ce00
+
+// resource ID: 0x000000000000000000000000000000c76ebe4a02bbc34786d860b355f5a5ce00
 
 // ParseDepositEvent ...
 func ParseDepositEvent(abi *abi.ABI, log *types.Log) (ContractEvent, error) {
@@ -86,13 +88,13 @@ func ParseDepositEvent(abi *abi.ABI, log *types.Log) (ContractEvent, error) {
 		return nil, err
 	}
 
-	ev.DestinationChainID = common.RightPadBytes(log.Topics[1].Bytes(), 8)
-	ev.ResourceID = common.RightPadBytes(log.Topics[2].Bytes(), 32)
-	ev.DepositNonce = big.NewInt(0).SetBytes(log.Topics[3].Bytes()).Uint64()
+	// ev.DestinationChainID = common.RightPadBytes(log.Topics[1].Bytes(), 8)
+	// ev.ResourceID = common.RightPadBytes(log.Topics[2].Bytes(), 32)
+	// ev.DepositNonce = big.NewInt(0).SetBytes(log.Topics[3].Bytes()).Uint64()
 
 	fmt.Printf("Deposited\n")
-	fmt.Printf("destination chain ID: 0x%s\n", common.Bytes2Hex(ev.DestinationChainID))
-	fmt.Printf("resource ID: 0x%s\n", common.Bytes2Hex(ev.ResourceID))
+	fmt.Printf("destination chain ID: 0x%s\n", common.Bytes2Hex(ev.DestinationChainID[:]))
+	fmt.Printf("resource ID: 0x%s\n", common.Bytes2Hex(ev.ResourceID[:]))
 	fmt.Printf("deposit nonce: %d\n", ev.DepositNonce)
 	fmt.Printf("depositor address: %s\n", ev.Depositor.Hex())
 	fmt.Printf("recipient address: %s\n", ev.RecipientAddress.Hex())
@@ -108,9 +110,9 @@ func (ev DepositEvent) ToTxLog() *storage.TxLog {
 	return &storage.TxLog{
 		Chain:              string(ev.ResourceID[:]),
 		TxType:             storage.TxTypeDeposit,
-		DestinationChainID: common.Bytes2Hex(ev.DestinationChainID),
+		DestinationChainID: common.Bytes2Hex(ev.DestinationChainID[:]),
 		SwapID:             fmt.Sprintf("%d", ev.DepositNonce),
-		ResourceID:         common.Bytes2Hex(ev.ResourceID),
+		ResourceID:         common.Bytes2Hex(ev.ResourceID[:]),
 		DepositNonce:       ev.DepositNonce,
 		SenderAddr:         ev.Depositor.Hex(),
 		ReceiverAddr:       ev.RecipientAddress.Hex(),
@@ -131,7 +133,6 @@ type ProposalVoteEvent struct {
 func ParseProposalVote(abi *abi.ABI, log *types.Log) (ContractEvent, error) {
 	var ev ProposalVoteEvent
 	if err := abi.UnpackIntoInterface(&ev, ProposalVoteName, log.Data); err != nil {
-		fmt.Println("AA")
 		return nil, err
 	}
 
@@ -170,25 +171,25 @@ type ProposalEvent struct {
 	DataHash      [32]byte
 }
 
-// ParseProposalEvent ...
-func ParseProposalEvent(abi *abi.ABI, log *types.Log) (ContractEvent, error) {
-	var ev ProposalEvent
-	if err := abi.UnpackIntoInterface(&ev, ProposalEventName, log.Data); err != nil {
-		return nil, err
-	}
-	// ev.OriginChainID = log.Topics[1].Bytes()
-	// ev.DepositNonce = big.NewInt(0).SetBytes(log.Topics[2].Bytes()).Uint64()
-	// ev.Status = uint8(big.NewInt(0).SetBytes(log.Topics[3].Bytes()).Uint64())
+// // ParseProposalEvent ...
+// func ParseProposalEvent(abi *abi.ABI, log *types.Log) (ContractEvent, error) {
+// 	var ev ProposalEvent
+// 	if err := abi.UnpackIntoInterface(&ev, ProposalEventName, log.Data); err != nil {
+// 		return nil, err
+// 	}
+// 	ev.OriginChainID = log.Topics[1].Bytes()
+// 	ev.DepositNonce = big.NewInt(0).SetBytes(log.Topics[2].Bytes()).Uint64()
+// 	ev.Status = uint8(big.NewInt(0).SetBytes(log.Topics[3].Bytes()).Uint64())
 
-	fmt.Printf("ProposalEvent\n")
-	fmt.Printf("origin chain ID: 0x%s\n", common.Bytes2Hex(ev.OriginChainID[:]))
-	fmt.Printf("deposit nonce: %d\n", ev.DepositNonce)
-	fmt.Printf("status: %d\n", ev.Status)
-	fmt.Printf("resource ID: 0x%s\n", common.Bytes2Hex(ev.ResourceID[:]))
-	fmt.Printf("DataHash: 0x%s\n\n", common.Bytes2Hex(ev.DataHash[:]))
+// 	fmt.Printf("ProposalEvent\n")
+// 	fmt.Printf("origin chain ID: 0x%s\n", common.Bytes2Hex(ev.OriginChainID[:]))
+// 	fmt.Printf("deposit nonce: %d\n", ev.DepositNonce)
+// 	fmt.Printf("status: %d\n", ev.Status)
+// 	fmt.Printf("resource ID: 0x%s\n", common.Bytes2Hex(ev.ResourceID[:]))
+// 	fmt.Printf("DataHash: 0x%s\n\n", common.Bytes2Hex(ev.DataHash[:]))
 
-	return ev, nil
-}
+// 	return ev, nil
+// }
 
 // ToTxLog ...
 func (ev ProposalEvent) ToTxLog() *storage.TxLog {
@@ -214,13 +215,21 @@ func (ev ProposalEvent) ToTxLog() *storage.TxLog {
 }
 
 // ParseEvent ...
-func ParseEvent(log *types.Log) (ContractEvent, error) {
+func (w *Erc20Worker) parseEvent(log *types.Log) (ContractEvent, error) {
 	if bytes.Equal(log.Topics[0][:], DepositEventHash[:]) {
-		abi, _ := abi.JSON(strings.NewReader(ethbr.BridgeABI))
-		return ParseDepositEvent(&abi, log)
+		fmt.Println(w.chainName)
+		if w.chainName == storage.EthChain {
+			return ParseEthDepositEvent(log)
+		} else if w.chainName == storage.LaChain {
+			return ParseLaDepositEvent(log)
+		}
 	} else if bytes.Equal(log.Topics[0][:], ProposalEventHash[:]) {
-		abi, _ := abi.JSON(strings.NewReader(labr.BridgeABI))
-		return ParseProposalEvent(&abi, log)
+		fmt.Println(w.chainName)
+		if w.chainName == storage.EthChain {
+			return ParseEthProposalEvent(log)
+		} else if w.chainName == storage.LaChain {
+			return ParseLaProposalEvent(log)
+		}
 	} else if bytes.Equal(log.Topics[0][:], ProposalVoteHash[:]) {
 		abi, _ := abi.JSON(strings.NewReader(labr.BridgeABI))
 		return ParseProposalVote(&abi, log)

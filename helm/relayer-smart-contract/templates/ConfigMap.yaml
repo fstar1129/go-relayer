@@ -1,0 +1,21 @@
+# This is a simple example of using a config map to create a single page static site.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name:  {{ .Release.Name }}
+  labels:
+    app.kubernetes.io/name:  {{ .Release.Name }}
+    helm.sh/chart: {{ include "mainnet-migrate-srv.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  {{- $env := .Values.global.env }}
+  GLOBAL_ENVIRONMENT: "{{ $env }}"
+  {{- range $k, $v := .Values.configmap }}
+    {{- if eq (kindOf $v) "map" }}
+  {{ $k }}: "{{ pluck $env $v | default (pluck "default" $v) | first | toString | replace "{env}" $env }}"
+    {{- else }}
+  {{ $k }}: "{{ $v | toString | replace "{env}" $env }}"
+    {{- end }}
+  {{- end }}
+
