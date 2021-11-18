@@ -68,7 +68,7 @@ func (w *WatcherSRV) collector(worker workers.IWorker, threshold time.Duration, 
 			time.Sleep(threshold)
 		}
 
-		time.Sleep(time.Second)
+		time.Sleep(500 * time.Millisecond)
 	}
 }
 

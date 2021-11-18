@@ -18,10 +18,6 @@ func ParseLaDepositEvent(log *types.Log) (ContractEvent, error) {
 		return nil, err
 	}
 
-	// ev.DestinationChainID = common.RightPadBytes(log.Topics[1].Bytes(), 8)
-	// ev.ResourceID = common.RightPadBytes(log.Topics[2].Bytes(), 32)
-	// ev.DepositNonce = big.NewInt(0).SetBytes(log.Topics[3].Bytes()).Uint64()
-
 	fmt.Printf("Deposited\n")
 	fmt.Printf("destination chain ID: 0x%s\n", common.Bytes2Hex(ev.DestinationChainID[:]))
 	fmt.Printf("resource ID: 0x%s\n", common.Bytes2Hex(ev.ResourceID[:]))
@@ -42,10 +38,6 @@ func ParseLaProposalVote(log *types.Log) (ContractEvent, error) {
 		return nil, err
 	}
 
-	// ev.OriginChainID = log.Topics[1].Bytes()
-	// ev.DepositNonce = big.NewInt(0).SetBytes(log.Topics[2].Bytes()).Uint64()
-	// ev.Status = uint8(big.NewInt(0).SetBytes(log.Topics[3].Bytes()).Uint64())
-
 	fmt.Printf("ProposalVote\n")
 	fmt.Printf("origin chain ID: 0x%s\n", common.Bytes2Hex(ev.OriginChainID[:]))
 	fmt.Printf("deposit nonce: %d\n", ev.DepositNonce)
@@ -63,9 +55,6 @@ func ParseLaProposalEvent(log *types.Log) (ContractEvent, error) {
 	if err := abi.UnpackIntoInterface(&ev, ProposalEventName, log.Data); err != nil {
 		return nil, err
 	}
-	// ev.OriginChainID = log.Topics[1].Bytes()
-	// ev.DepositNonce = big.NewInt(0).SetBytes(log.Topics[2].Bytes()).Uint64()
-	// ev.Status = uint8(big.NewInt(0).SetBytes(log.Topics[3].Bytes()).Uint64())
 
 	fmt.Printf("ProposalEvent\n")
 	fmt.Printf("origin chain ID: 0x%s\n", common.Bytes2Hex(ev.OriginChainID[:]))

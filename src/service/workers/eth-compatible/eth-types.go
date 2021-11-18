@@ -40,7 +40,6 @@ func ParseEthDepositEvent(log *types.Log) (ContractEvent, error) {
 func ParseEthProposalVote(abi *abi.ABI, log *types.Log) (ContractEvent, error) {
 	var ev ProposalVoteEvent
 	if err := abi.UnpackIntoInterface(&ev, ProposalVoteName, log.Data); err != nil {
-		fmt.Println("AA")
 		return nil, err
 	}
 

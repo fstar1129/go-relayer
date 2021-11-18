@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -22,11 +21,6 @@ func (a *App) Endpoints(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	// jsonBytes, err := json.MarshalIndent(endpoints, "", "    ")
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
 	common.ResponJSON(w, http.StatusOK, endpoints)
 }
 
@@ -47,7 +41,6 @@ func (a *App) SwapStatusHandler(w http.ResponseWriter, r *http.Request) {
 
 	status, err := a.relayer.GetSwapStatus(&msg)
 	if err != nil {
-		fmt.Println(err)
 		common.ResponJSON(w, http.StatusInternalServerError, createNewError("get swap from database", err.Error()))
 		return
 	}

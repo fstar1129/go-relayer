@@ -33,24 +33,6 @@ const (
 ////
 
 var (
-	// HTLTEventHash ...
-	HTLTEventHash = common.HexToHash("0xa9d611af8ea77eff0d427e2ae8375a23513129a25c615378cff5594b03c36ce9")
-
-	// ClaimedEventHash ...
-	ClaimedEventHash = common.HexToHash("0x91d697238e9aa9f3172d17522c9be529b94a892481554e1ea619369b5b12f39a")
-
-	// CreateUnbindEventHash ...
-	CreateUnbindEventHash = common.HexToHash("0xf3f48b99c0f6ef1f16092aed9ebd7d552e8b7647e0332990550d7626d7857ba5")
-
-	// ConfirmedEventHash ...
-	ConfirmedEventHash = common.HexToHash("0xf3f48b99c0f6ef1f16092aed9ebd7d552e8b7647e0332990550d7626d7857ba5")
-
-	// InitEventHash ...
-	InitEventHash = common.HexToHash("0xf3f48b99c0f6ef1f16092aed9ebd7d552e8b7647e0332990550d7626d7857ba5")
-
-	// RefundEventHash ...
-	RefundEventHash = common.HexToHash("0x04eb8ae268f23cfe2f9d72fa12367b104af16959f6a93530a4cc0f50688124f9")
-
 	// DepositEventHash
 	DepositEventHash = common.HexToHash("0x6a8f7ffca1e3ab54554c709a9eb23e11fc5063f0b24e40087c40ab3e7027f189")
 
@@ -75,33 +57,6 @@ type DepositEvent struct {
 	RecipientAddress   common.Address
 	TokenAddress       common.Address
 	Amount             *big.Int
-}
-
-// resource id: 000000000000000000000000000000c76ebe4a02bbc34786d860b355f5a5ce00
-
-// resource ID: 0x000000000000000000000000000000c76ebe4a02bbc34786d860b355f5a5ce00
-
-// ParseDepositEvent ...
-func ParseDepositEvent(abi *abi.ABI, log *types.Log) (ContractEvent, error) {
-	var ev DepositEvent
-	if err := abi.UnpackIntoInterface(&ev, DepositEventName, log.Data); err != nil {
-		return nil, err
-	}
-
-	// ev.DestinationChainID = common.RightPadBytes(log.Topics[1].Bytes(), 8)
-	// ev.ResourceID = common.RightPadBytes(log.Topics[2].Bytes(), 32)
-	// ev.DepositNonce = big.NewInt(0).SetBytes(log.Topics[3].Bytes()).Uint64()
-
-	fmt.Printf("Deposited\n")
-	fmt.Printf("destination chain ID: 0x%s\n", common.Bytes2Hex(ev.DestinationChainID[:]))
-	fmt.Printf("resource ID: 0x%s\n", common.Bytes2Hex(ev.ResourceID[:]))
-	fmt.Printf("deposit nonce: %d\n", ev.DepositNonce)
-	fmt.Printf("depositor address: %s\n", ev.Depositor.Hex())
-	fmt.Printf("recipient address: %s\n", ev.RecipientAddress.Hex())
-	fmt.Printf("token address: %s\n", ev.TokenAddress.Hex())
-	fmt.Printf("amount : %s\n", ev.Amount.String())
-
-	return ev, nil
 }
 
 // ToTxLog ...
@@ -136,10 +91,6 @@ func ParseProposalVote(abi *abi.ABI, log *types.Log) (ContractEvent, error) {
 		return nil, err
 	}
 
-	// ev.OriginChainID = log.Topics[1].Bytes()
-	// ev.DepositNonce = big.NewInt(0).SetBytes(log.Topics[2].Bytes()).Uint64()
-	// ev.Status = uint8(big.NewInt(0).SetBytes(log.Topics[3].Bytes()).Uint64())
-
 	fmt.Printf("ProposalVote\n")
 	fmt.Printf("origin chain ID: 0x%s\n", common.Bytes2Hex(ev.OriginChainID[:]))
 	fmt.Printf("deposit nonce: %d\n", ev.DepositNonce)
@@ -171,26 +122,6 @@ type ProposalEvent struct {
 	DataHash      [32]byte
 }
 
-// // ParseProposalEvent ...
-// func ParseProposalEvent(abi *abi.ABI, log *types.Log) (ContractEvent, error) {
-// 	var ev ProposalEvent
-// 	if err := abi.UnpackIntoInterface(&ev, ProposalEventName, log.Data); err != nil {
-// 		return nil, err
-// 	}
-// 	ev.OriginChainID = log.Topics[1].Bytes()
-// 	ev.DepositNonce = big.NewInt(0).SetBytes(log.Topics[2].Bytes()).Uint64()
-// 	ev.Status = uint8(big.NewInt(0).SetBytes(log.Topics[3].Bytes()).Uint64())
-
-// 	fmt.Printf("ProposalEvent\n")
-// 	fmt.Printf("origin chain ID: 0x%s\n", common.Bytes2Hex(ev.OriginChainID[:]))
-// 	fmt.Printf("deposit nonce: %d\n", ev.DepositNonce)
-// 	fmt.Printf("status: %d\n", ev.Status)
-// 	fmt.Printf("resource ID: 0x%s\n", common.Bytes2Hex(ev.ResourceID[:]))
-// 	fmt.Printf("DataHash: 0x%s\n\n", common.Bytes2Hex(ev.DataHash[:]))
-
-// 	return ev, nil
-// }
-
 // ToTxLog ...
 func (ev ProposalEvent) ToTxLog() *storage.TxLog {
 	// if status == 2 -> already claimed -> mint
@@ -217,14 +148,12 @@ func (ev ProposalEvent) ToTxLog() *storage.TxLog {
 // ParseEvent ...
 func (w *Erc20Worker) parseEvent(log *types.Log) (ContractEvent, error) {
 	if bytes.Equal(log.Topics[0][:], DepositEventHash[:]) {
-		fmt.Println(w.chainName)
 		if w.chainName == storage.EthChain {
 			return ParseEthDepositEvent(log)
 		} else if w.chainName == storage.LaChain {
 			return ParseLaDepositEvent(log)
 		}
 	} else if bytes.Equal(log.Topics[0][:], ProposalEventHash[:]) {
-		fmt.Println(w.chainName)
 		if w.chainName == storage.EthChain {
 			return ParseEthProposalEvent(log)
 		} else if w.chainName == storage.LaChain {
