@@ -32,6 +32,7 @@ func ParseEthDepositEvent(log *types.Log) (ContractEvent, error) {
 	fmt.Printf("recipient address: %s\n", ev.RecipientAddress.Hex())
 	fmt.Printf("token address: %s\n", ev.TokenAddress.Hex())
 	fmt.Printf("amount : %s\n", ev.Amount.String())
+	ev.Handler = "0xFDD669a1B85b7416A9d51325b03dB547e801947b"
 
 	return ev, nil
 }

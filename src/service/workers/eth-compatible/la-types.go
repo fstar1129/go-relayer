@@ -26,6 +26,7 @@ func ParseLaDepositEvent(log *types.Log) (ContractEvent, error) {
 	fmt.Printf("recipient address: %s\n", ev.RecipientAddress.Hex())
 	fmt.Printf("token address: %s\n", ev.TokenAddress.Hex())
 	fmt.Printf("amount : %s\n", ev.Amount.String())
+	ev.Handler = "0x8D960cbDc18eE3D10169EC27058B33eae55A7C35"
 
 	return ev, nil
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
 	labr "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/eth-compatible/abi/bridge/la"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/utils"
 )
 
 ////
@@ -57,16 +58,16 @@ type DepositEvent struct {
 	RecipientAddress   common.Address
 	TokenAddress       common.Address
 	Amount             *big.Int
+	Handler            string
 }
 
 // ToTxLog ...
 func (ev DepositEvent) ToTxLog() *storage.TxLog {
-	//	if
 	return &storage.TxLog{
 		Chain:              string(ev.ResourceID[:]),
 		TxType:             storage.TxTypeDeposit,
 		DestinationChainID: common.Bytes2Hex(ev.DestinationChainID[:]),
-		SwapID:             fmt.Sprintf("%d", ev.DepositNonce),
+		SwapID:             utils.CalcutateSwapID(ev.Amount.String(), ev.RecipientAddress.Hex(), "0x8D960cbDc18eE3D10169EC27058B33eae55A7C35"),
 		ResourceID:         common.Bytes2Hex(ev.ResourceID[:]),
 		DepositNonce:       ev.DepositNonce,
 		SenderAddr:         ev.Depositor.Hex(),
@@ -103,9 +104,9 @@ func ParseProposalVote(abi *abi.ABI, log *types.Log) (ContractEvent, error) {
 // ToTxLog ...
 func (ev ProposalVoteEvent) ToTxLog() *storage.TxLog {
 	return &storage.TxLog{
-		Chain:         storage.EthChain,
-		TxType:        storage.TxTypeClaim,
-		SwapID:        fmt.Sprintf("%d", ev.DepositNonce),
+		Chain:  storage.EthChain,
+		TxType: storage.TxTypeClaim,
+		//	SwapID:        fmt.Sprintf("%d", ev.DepositNonce),
 		OriginСhainID: common.Bytes2Hex(ev.OriginChainID[:]),
 		DepositNonce:  ev.DepositNonce,
 		SwapStatus:    ev.Status,
@@ -129,7 +130,7 @@ func (ev ProposalEvent) ToTxLog() *storage.TxLog {
 	txlog := &storage.TxLog{
 		Chain:         storage.EthChain,
 		TxType:        storage.TxTypeClaim,
-		SwapID:        fmt.Sprintf("%d", ev.DepositNonce),
+		SwapID:        common.Bytes2Hex(ev.DataHash[:]),
 		OriginСhainID: common.Bytes2Hex(ev.OriginChainID[:]),
 		DepositNonce:  ev.DepositNonce,
 		SwapStatus:    ev.Status,

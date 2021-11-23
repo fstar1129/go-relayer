@@ -7,7 +7,9 @@ import (
 
 	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -70,4 +72,41 @@ func BytesToBytes8(b []byte) [8]byte {
 	var byteArr [8]byte
 	copy(byteArr[:], b)
 	return byteArr
+}
+
+func CalcutateSwapID(amount, receiverAddr, handlerAddr string) string {
+	uint256Ty, _ := abi.NewType("uint256", "uint256", nil)
+	addressTy, _ := abi.NewType("address", "address", nil)
+	bytesTy, _ := abi.NewType("bytes", "bytes", nil)
+
+	arguments := abi.Arguments{
+		{
+			Type: uint256Ty,
+		},
+		{
+			Type: addressTy,
+		},
+	}
+
+	value, _ := new(big.Int).SetString(amount, 10)
+	bytes, _ := arguments.Pack(
+		value,
+		common.HexToAddress(receiverAddr),
+	)
+
+	arguments = abi.Arguments{
+		{
+			Type: addressTy,
+		},
+		{
+			Type: bytesTy,
+		},
+	}
+
+	data, _ := arguments.Pack(
+		common.HexToAddress(handlerAddr),
+		bytes,
+	)
+
+	return hexutil.Encode(crypto.Keccak256(data))
 }
