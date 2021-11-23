@@ -130,7 +130,7 @@ func (ev ProposalEvent) ToTxLog() *storage.TxLog {
 	txlog := &storage.TxLog{
 		Chain:         storage.EthChain,
 		TxType:        storage.TxTypeClaim,
-		SwapID:        common.Bytes2Hex(ev.DataHash[:]),
+		SwapID:        fmt.Sprintf("0x%s", common.Bytes2Hex(ev.DataHash[:])),
 		OriginСhainID: common.Bytes2Hex(ev.OriginChainID[:]),
 		DepositNonce:  ev.DepositNonce,
 		SwapStatus:    ev.Status,
