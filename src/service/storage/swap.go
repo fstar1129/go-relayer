@@ -28,9 +28,7 @@ func (d *DataBase) GetSwapByStatus(swapType SwapType, sender, receipt string, am
 	swap := &Swap{}
 	if err := d.db.Where("type = ? and sender_addr = ? and receiver_addr = ? and out_amount = ? and status in (?)",
 		swapType, sender, receipt, amount,
-		[]SwapStatus{SwapStatusPassedConfirmed, SwapStatusClaimConfirmed, SwapStatusClaimSent,
-			SwapStatusClaimSentFailed, SwapStatusSpendSent,
-			SwapStatusSpendSentFailed, SwapStatusSpendConfirmed}).
+		[]SwapStatus{SwapStatusDepositConfirmed, SwapStatusDepositFailed, SwapStatusDepositSent, SwapStatusDepositSent, SwapStatusDepositSentFailed, SwapStatusRejected}).
 		Find(&swap).Error; err != nil {
 		return nil, err
 	}

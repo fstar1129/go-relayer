@@ -21,7 +21,6 @@ import (
 
 	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
 	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
-	ethbr "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/eth-compatible/abi/bridge/eth"
 	labr "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/eth-compatible/abi/bridge/la"
 	es "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/eth-compatible/abi/erc20Swap"
 )
@@ -170,7 +169,7 @@ func (w *Erc20Worker) getLogs(blockHash common.Hash) ([]*storage.TxLog, error) {
 
 	models := make([]*storage.TxLog, 0, len(logs))
 	for _, log := range logs {
-		//w.logger.Infof("WORKER(%s) NEW EVENT: %v\n\n", w.chainID, log)
+		w.logger.Infof("WORKER(%s) NEW EVENT: %v\n\n", w.chainID, log)
 		event, err := w.parseEvent(&log)
 		if err != nil {
 			w.logger.WithFields(logrus.Fields{"function": "GetLogs()"}).Errorf("parse event log error, err=%s", err)
@@ -217,7 +216,7 @@ func (w *Erc20Worker) Vote(depositNonce uint64, chainID [8]byte, resourceID [32]
 		return "", err
 	}
 
-	instance, err := labr.NewBridge(w.swapContractAddr, w.client)
+	instance, err := labr.NewLabr(w.swapContractAddr, w.client)
 	if err != nil {
 		return "", err
 	}
@@ -229,72 +228,6 @@ func (w *Erc20Worker) Vote(depositNonce uint64, chainID [8]byte, resourceID [32]
 	}
 
 	return tx.Hash().String(), nil
-}
-
-// Spend spends bind request(==mints token erc-20 on Lachain)
-// Requires:
-// - swapID- swap's id
-// - erc20Addr - erc20 token address, laAddr - lrc-20 token address(may to bind on pair of tokens(erc-20 and lrc-20) later on)
-// - toAddress - receiver address, which will receive minted coins
-// - amount - value of minted coins
-func (w *Erc20Worker) SpendBind(depositNonce uint64, chainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error) {
-	auth, err := w.getTransactor()
-	if err != nil {
-		return "", err
-	}
-
-	instance, err := labr.NewBridge(w.swapContractAddr, w.client)
-	if err != nil {
-		return "", err
-	}
-
-	value, _ := new(big.Int).SetString(amount, 10)
-	tx, err := instance.ExecuteProposal(auth, chainID, depositNonce, resourceID, common.HexToAddress(receiptAddr), value)
-	if err != nil {
-		return "", err
-	}
-
-	return tx.Hash().String(), nil
-}
-
-// SpendUnbind spends unbind request(==sends erc-20 token to receiver on Ethereum)
-// Requires:
-// - swapID- swap's id
-// - toAddress - receiver address, which will receive minted coins
-// - amount - value of minted coins
-func (w *Erc20Worker) SpendUnbind(depositNonce uint64, chainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error) {
-	auth, err := w.getTransactor()
-	if err != nil {
-		return "", err
-	}
-
-	instance, err := ethbr.NewBridge(w.swapContractAddr, w.client)
-	if err != nil {
-		return "", err
-	}
-
-	value, _ := new(big.Int).SetString(amount, 10)
-	tx, err := instance.ExecuteProposal(auth, chainID, depositNonce, resourceID,
-		common.HexToAddress(receiptAddr), value)
-	if err != nil {
-		return "", err
-	}
-
-	return tx.Hash().String(), nil
-}
-
-// GetSentTxStatus ...
-func (w *Erc20Worker) GetSentTxStatus(hash string) storage.TxStatus {
-	txReceipt, err := w.client.TransactionReceipt(context.Background(), common.HexToHash(hash))
-	if err != nil {
-		return storage.TxSentStatusNotFound
-	}
-
-	if txReceipt.Status == types.ReceiptStatusFailed {
-		return storage.TxSentStatusFailed
-	}
-
-	return storage.TxSentStatusSuccess
 }
 
 // HasSwap ...
@@ -386,6 +319,30 @@ func (w *Erc20Worker) EthBalance(address common.Address) (*big.Int, error) {
 // GetWorkerAddress ...
 func (w *Erc20Worker) GetWorkerAddress() string {
 	return w.config.WorkerAddr.String()
+}
+
+// GetSentTxStatus ...
+func (w *Erc20Worker) GetSentTxStatus(hash string) storage.TxStatus {
+	// _, isPending, err := w.client.TransactionByHash(context.Background(), common.HexToHash(hash))
+	// if err != nil {
+	// 	w.logger.Errorln("GetSentTxStatus, err = ", err)
+	// 	return storage.TxSentStatusNotFound
+	// }
+
+	// if isPending {
+	// 	return storage.TxSentStatusPending
+	// }
+
+	txReceipt, err := w.client.TransactionReceipt(context.Background(), common.HexToHash(hash))
+	if err != nil {
+		return storage.TxSentStatusNotFound
+	}
+
+	if txReceipt.Status == types.ReceiptStatusFailed {
+		return storage.TxSentStatusFailed
+	}
+
+	return storage.TxSentStatusSuccess
 }
 
 // GetColdWalletAddress ...

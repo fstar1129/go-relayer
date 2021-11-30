@@ -64,7 +64,6 @@ func (r *RelayerSRV) Run() {
 	// run Worker workers
 	for _, worker := range r.Workers {
 		go r.ConfirmWorkerTx(worker)
-		go r.emitChainSendSpend(worker)
 		go r.CheckTxSentRoutine(worker)
 	}
 }

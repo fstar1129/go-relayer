@@ -50,10 +50,6 @@ type IWorker interface {
 	//	heightSpan int64, outAmount *big.Int) (string, error)
 	// CreateRequest sends wrapped tokens tx
 	//	CreateRequest(swapID common.Hash) (string, error)
-	// SpendBind
-	SpendBind(depositNonce uint64, chainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error)
-	// SpendUnBind
-	SpendUnbind(depositNonce uint64, chainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error)
 	// Vote
 	Vote(depositNonce uint64, chainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error)
 }

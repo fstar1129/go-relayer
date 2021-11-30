@@ -13,7 +13,7 @@ import (
 func (r *RelayerSRV) emitChainSendClaim(swapType storage.SwapType) {
 	for {
 		swaps := r.storage.GetSwapsByTypeAndStatuses(swapType,
-			[]storage.SwapStatus{storage.SwapStatusDepositConfirmed, storage.SwapStatusClaimSent})
+			[]storage.SwapStatus{storage.SwapStatusDepositConfirmed, storage.SwapStatusDepositSent})
 
 		for _, swap := range swaps {
 			if swap.Status == storage.SwapStatusDepositConfirmed {
@@ -22,8 +22,8 @@ func (r *RelayerSRV) emitChainSendClaim(swapType storage.SwapType) {
 					r.logger.Errorf("submit claim failed: %s", err)
 				}
 			} else {
-				r.handleTxSent(r.laWorker.GetChainName(), swap, storage.TxTypeClaim,
-					storage.SwapStatusClaimConfirmed, storage.SwapStatusClaimSentFailed)
+				r.handleTxSent(r.laWorker.GetChainName(), swap, storage.TxTypeDeposit,
+					storage.SwapStatusDepositSent, storage.SwapStatusDepositSentFailed)
 			}
 		}
 
@@ -35,7 +35,7 @@ func (r *RelayerSRV) emitChainSendClaim(swapType storage.SwapType) {
 func (r *RelayerSRV) sendClaim(direction storage.SwapType, worker workers.IWorker, swap *storage.Swap) (string, error) {
 	txSent := &storage.TxSent{
 		Chain:      worker.GetChainName(),
-		Type:       storage.TxTypeClaim,
+		Type:       storage.TxTypeDeposit,
 		SwapID:     swap.SwapID,
 		CreateTime: time.Now().Unix(),
 	}
@@ -48,12 +48,12 @@ func (r *RelayerSRV) sendClaim(direction storage.SwapType, worker workers.IWorke
 	if err != nil {
 		txSent.ErrMsg = err.Error()
 		txSent.Status = storage.TxSentStatusFailed
-		r.storage.UpdateSwapStatus(swap, storage.SwapStatusClaimSentFailed, "")
+		r.storage.UpdateSwapStatus(swap, storage.SwapStatusDepositFailed, "")
 		r.storage.CreateTxSent(txSent)
 		return "", fmt.Errorf("could not send claim tx: %w", err)
 	}
 	txSent.TxHash = txHash
-	r.storage.UpdateSwapStatus(swap, storage.SwapStatusClaimSent, "")
+	r.storage.UpdateSwapStatus(swap, storage.SwapStatusDepositSent, "")
 
 	r.logger.Infof("send claim tx success | chain=%s, swap_ID=%s, tx_hash=%s", worker.GetChainName(),
 		swap.SwapID, txSent.TxHash)
