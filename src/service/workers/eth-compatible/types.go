@@ -17,7 +17,8 @@ import (
 
 const (
 	// DepositEventName ...
-	DepositEventName = "Deposit"
+	DepositEventName  = "Deposit"
+	ProposalEventName = "ProposalEvent"
 )
 
 ////
@@ -26,7 +27,10 @@ const (
 
 var (
 	// DepositEventHash
-	DepositEventHash = common.HexToHash("0x5d633e6cc5b698cdfbcf6dffac28414bfb25b893e0cc792c53d17ce1f46ccb5c")
+	DepositEventHash = common.HexToHash("0x370525803ffa9a7c0e6adb3868e393dca45d8b42b2f62fd1f23ecfe99f6ce8fc")
+
+	// ProposalEventHash
+	ProposalEventHash = common.HexToHash("0x9686dcabd0450cad86a88df15a9d35b08b35d1b08a19008df37cf8538c467516")
 )
 
 // ContractEvent ...
@@ -44,16 +48,29 @@ type DepositEvent struct {
 	RecipientAddress   common.Address
 	TokenAddress       common.Address
 	Amount             *big.Int
+	DataHash           [32]byte
+	Raw                types.Log // Blockchain specific contextual infos
+}
+
+type ProposalEvent struct {
+	OriginChainID      [8]byte
+	DestinationChainID [8]byte
+	RecipientAddress   common.Address
+	Amount             *big.Int
+	DepositNonce       uint64
+	Status             uint8
+	ResourceID         [32]byte
+	DataHash           [32]byte
 	Raw                types.Log // Blockchain specific contextual infos
 }
 
 // ToTxLog ...
 func (ev DepositEvent) ToTxLog() *storage.TxLog {
 	return &storage.TxLog{
-		Chain:              string(ev.ResourceID[:]),
 		TxType:             storage.TxTypeDeposit,
 		DestinationChainID: common.Bytes2Hex(ev.DestinationChainID[:]),
-		SwapID:             utils.CalcutateSwapID(ev.Amount.String(), ev.RecipientAddress.Hex(), "0x8D960cbDc18eE3D10169EC27058B33eae55A7C35"),
+		OriginСhainID:      common.Bytes2Hex(ev.OriginChainID[:]),
+		SwapID:             utils.CalcutateSwapID(string(ev.DataHash[:]), string(ev.DepositNonce)),
 		ResourceID:         common.Bytes2Hex(ev.ResourceID[:]),
 		DepositNonce:       ev.DepositNonce,
 		SenderAddr:         ev.Depositor.Hex(),
@@ -63,16 +80,43 @@ func (ev DepositEvent) ToTxLog() *storage.TxLog {
 	}
 }
 
+func (ev ProposalEvent) ToTxLog() *storage.TxLog {
+	txlog := &storage.TxLog{
+		TxType:             storage.TxTypeVote,
+		DestinationChainID: common.Bytes2Hex(ev.DestinationChainID[:]),
+		OriginСhainID:      common.Bytes2Hex(ev.OriginChainID[:]),
+		SwapID:             utils.CalcutateSwapID(string(ev.DataHash[:]), string(ev.DepositNonce)),
+		ResourceID:         common.Bytes2Hex(ev.ResourceID[:]),
+		DepositNonce:       ev.DepositNonce,
+		ReceiverAddr:       ev.RecipientAddress.Hex(),
+		OutAmount:          ev.Amount.String(),
+	}
+
+	if ev.Status == uint8(2) {
+		txlog.TxType = storage.TxTypePassed
+	} else if ev.Status == uint8(3) {
+		txlog.TxType = storage.TxTypeSpend
+	}
+
+	return txlog
+}
+
 // ParseEvent ...
 func (w *Erc20Worker) parseEvent(log *types.Log) (ContractEvent, error) {
 	if bytes.Equal(log.Topics[0][:], DepositEventHash[:]) {
-		if w.chainName == storage.EthChain {
-			return ParseEthDepositEvent(log)
-		} else if w.chainName == storage.LaChain {
+		if w.chainName == storage.LaChain {
 			return ParseLaDepositEvent(log)
+		} else {
+			return ParseEthDepositEvent(log)
 		}
 	}
-
+	if bytes.Equal(log.Topics[0][:], ProposalEventHash[:]) {
+		if w.chainName == storage.LaChain {
+			return ParseLaProposalEvent(log)
+		} else {
+			return ParseEthProposalEvent(log)
+		}
+	}
 	return nil, nil
 }
 

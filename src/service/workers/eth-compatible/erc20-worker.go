@@ -210,7 +210,7 @@ func (w *Erc20Worker) GetHeight() (int64, error) {
 }
 
 // Vote ...
-func (w *Erc20Worker) Vote(depositNonce uint64, chainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error) {
+func (w *Erc20Worker) Vote(depositNonce uint64, originchainID [8]byte, destinationChainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error) {
 	auth, err := w.getTransactor()
 	if err != nil {
 		return "", err
@@ -222,7 +222,7 @@ func (w *Erc20Worker) Vote(depositNonce uint64, chainID [8]byte, resourceID [32]
 	}
 
 	value, _ := new(big.Int).SetString(amount, 10)
-	tx, err := instance.VoteProposal(auth, chainID, depositNonce, resourceID, common.HexToAddress(receiptAddr), value)
+	tx, err := instance.VoteProposal(auth, originchainID, destinationChainID, depositNonce, resourceID, common.HexToAddress(receiptAddr), value)
 	if err != nil {
 		return "", err
 	}
@@ -286,18 +286,19 @@ func (w *Erc20Worker) getTransactor() (auth *bind.TransactOpts, err error) {
 	}
 
 	var nonce uint64
-	if w.chainName == storage.LaChain {
-		nonce, err = w.GetTxCountLatest()
-		if err != nil {
-			return nil, err
-		}
+	// if w.chainName == storage.LaChain {
+	// 	nonce, err = w.GetTxCountLatest()
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
 
-	} else {
-		nonce, err = w.client.PendingNonceAt(context.Background(), w.config.WorkerAddr)
-		if err != nil {
-			return nil, err
-		}
+	// } else {
+	nonce, err = w.client.PendingNonceAt(context.Background(), w.config.WorkerAddr)
+	if err != nil {
+		return nil, err
 	}
+	// }
+	// 90000000000,
 
 	auth, err = bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(w.chainID))
 	if err != nil {

@@ -59,8 +59,7 @@ func CreateNewRelayerSRV(logger *logrus.Logger, gormDB *gorm.DB, laConfig, ethCo
 func (r *RelayerSRV) Run() {
 	// start watcher
 	r.Watcher.Run()
-	go r.emitChainSendClaim(storage.SwapTypeUnbind)
-	go r.emitChainSendClaim(storage.SwapTypeBind)
+	go r.emitChainSendClaim()
 	// run Worker workers
 	for _, worker := range r.Workers {
 		go r.ConfirmWorkerTx(worker)
@@ -68,25 +67,25 @@ func (r *RelayerSRV) Run() {
 	}
 }
 
-func (r *RelayerSRV) GetSwapStatus(req *models.SwapStatus) (storage.SwapStatus, error) {
-	swapType := storage.SwapTypeUnbind
-	if req.Chain == storage.LaChain {
-		swapType = storage.SwapTypeBind
-	}
+// func (r *RelayerSRV) GetSwapStatus(req *models.SwapStatus) (storage.SwapStatus, error) {
+// 	swapType := storage.SwapTypeUnbind
+// 	if req.Chain == storage.LaChain {
+// 		swapType = storage.SwapTypeBind
+// 	}
 
-	swap, err := r.storage.GetSwapByStatus(swapType, req.Sender, req.Receipt, req.Amount)
-	if err != nil {
-		// log
-		r.logger.Errorln(err)
-		return "", err
-	}
+// 	// swap, err := r.storage.GetSwapByStatus(swapType, req.Sender, req.Receipt, req.Amount)
+// 	// if err != nil {
+// 		// log
+// 		// r.logger.Errorln(err)
+// 		// return "", err
+// 	}
 
-	if swap != nil {
-		return swap.Status, nil
-	}
+// 	if swap != nil {
+// 		return swap.Status, nil
+// 	}
 
-	return "", nil
-}
+// 	return "", nil
+// }
 
 // Status ...
 func (r *RelayerSRV) StatusOfWorkers() (map[string]*models.WorkerStatus, error) {
@@ -130,25 +129,26 @@ func (r *RelayerSRV) ConfirmWorkerTx(worker workers.IWorker) {
 					swapType = storage.SwapTypeUnbind
 				}
 				// reject swap request if receiver addr and worker chain addr both are r addr
-				if worker.IsSameAddress(txLog.ReceiverAddr, worker.GetWorkerAddress()) &&
-					!r.laWorker.IsSameAddress(txLog.WorkerChainAddr, r.laWorker.GetWorkerAddress()) {
-					r.logger.Warnln("THE SAME")
-				}
+				// if worker.IsSameAddress(txLog.ReceiverAddr, worker.GetWorkerAddress()) &&
+				// 	!r.laWorker.IsSameAddress(txLog.WorkerChainAddr, r.laWorker.GetWorkerAddress()) {
+				// 	r.logger.Warnln("THE SAME")
+				// }
 
 				r.logger.Infoln("NEW SWAP")
 				newSwap := &storage.Swap{
-					Type:         swapType,
-					SwapID:       txLog.SwapID,
-					SenderAddr:   txLog.SenderAddr,
-					ReceiverAddr: txLog.ReceiverAddr,
-					InTokenAddr:  txLog.InTokenAddr,
-					DepositNonce: txLog.DepositNonce,
-					ResourceID:   txLog.ResourceID,
-					OutAmount:    txLog.OutAmount,
-					ChainID:      txLog.DestinationChainID,
-					Height:       txLog.Height,
-					Status:       storage.SwapStatusDepositConfirmed,
-					CreateTime:   time.Now().Unix(),
+					Type:               swapType,
+					SwapID:             txLog.SwapID,
+					SenderAddr:         txLog.SenderAddr,
+					ReceiverAddr:       txLog.ReceiverAddr,
+					InTokenAddr:        txLog.InTokenAddr,
+					DepositNonce:       txLog.DepositNonce,
+					ResourceID:         txLog.ResourceID,
+					OutAmount:          txLog.OutAmount,
+					DestinationChainID: txLog.DestinationChainID,
+					OriginChainID:      txLog.OriginСhainID,
+					Height:             txLog.Height,
+					Status:             storage.SwapStatusDepositConfirmed,
+					CreateTime:         time.Now().Unix(),
 				}
 				newSwaps = append(newSwaps, newSwap)
 			}

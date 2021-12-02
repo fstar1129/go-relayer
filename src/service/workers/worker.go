@@ -51,5 +51,5 @@ type IWorker interface {
 	// CreateRequest sends wrapped tokens tx
 	//	CreateRequest(swapID common.Hash) (string, error)
 	// Vote
-	Vote(depositNonce uint64, chainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error)
+	Vote(depositNonce uint64, originChainID [8]byte, destinationChainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error)
 }

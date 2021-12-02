@@ -46,12 +46,13 @@ type TxLog struct {
 
 // Swap ...
 type Swap struct {
-	ID           int64
-	Type         SwapType
-	ChainID      string
-	SwapID       string
-	SenderAddr   string
-	ReceiverAddr string
+	ID                 int64
+	Type               SwapType
+	DestinationChainID string
+	OriginChainID      string
+	SwapID             string
+	SenderAddr         string
+	ReceiverAddr       string
 	//	WorkerChainAddr   string
 	InTokenAddr      string
 	OutTokenAddr     string

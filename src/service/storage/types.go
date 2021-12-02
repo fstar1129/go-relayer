@@ -32,7 +32,10 @@ const (
 type TxType string
 
 const (
+	TxTypeVote    TxType = "VOTE"
 	TxTypeDeposit TxType = "DEPOSIT"
+	TxTypePassed  TxType = "PASSED"
+	TxTypeSpend   TxType = "SPEND"
 )
 
 type SwapType string
@@ -45,11 +48,17 @@ const (
 type SwapStatus string
 
 const (
-	// DEPOSIT
-	SwapStatusDepositSent       SwapStatus = "DEPOSIT_SENT"
-	SwapStatusDepositConfirmed  SwapStatus = "DEPOSIT_CONFIRMED"
-	SwapStatusDepositFailed     SwapStatus = "DEPOSIT_FAILED"
-	SwapStatusDepositSentFailed SwapStatus = "DEPOSIT_SENT_FAILED"
+	// CLAIM
+	SwapStatusClaimSent       SwapStatus = "CLAIM_SENT"
+	SwapStatusClaimConfirmed  SwapStatus = "CLAIM_CONFIRMED"
+	SwapStatusClaimSentFailed SwapStatus = "CLAIM_SENT_FAILED"
+
+	//Deposit
+	SwapStatusDepositConfirmed SwapStatus = "DEPOSIT_CONFIRMED"
+	SwapStatusDepositFailed    SwapStatus = "DEPOSIT_FAILED"
+	SwapStatusPassedConfirmed  SwapStatus = "PASSED_CONFIRMED"
+	SwapStatusSpendSent        SwapStatus = "SPEND_SENT"
+	SwapStatusSpendConfirmed   SwapStatus = "SPEND_CONFIRMED"
 
 	SwapStatusRejected SwapStatus = "REJECTED"
 )
