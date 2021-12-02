@@ -286,19 +286,18 @@ func (w *Erc20Worker) getTransactor() (auth *bind.TransactOpts, err error) {
 	}
 
 	var nonce uint64
-	// if w.chainName == storage.LaChain {
-	// 	nonce, err = w.GetTxCountLatest()
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
+	if w.chainName == storage.LaChain {
+		nonce, err = w.GetTxCountLatest()
+		if err != nil {
+			return nil, err
+		}
 
-	// } else {
-	nonce, err = w.client.PendingNonceAt(context.Background(), w.config.WorkerAddr)
-	if err != nil {
-		return nil, err
+	} else {
+		nonce, err = w.client.PendingNonceAt(context.Background(), w.config.WorkerAddr)
+		if err != nil {
+			return nil, err
+		}
 	}
-	// }
-	// 90000000000,
 
 	auth, err = bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(w.chainID))
 	if err != nil {
