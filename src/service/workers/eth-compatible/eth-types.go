@@ -44,9 +44,9 @@ func ParseEthProposalEvent(log *types.Log) (ContractEvent, error) {
 	if err := abi.UnpackIntoInterface(&ev, ProposalEventName, log.Data); err != nil {
 		return nil, err
 	}
-	ev.DestinationChainID = utils.BytesToBytes8(log.Topics[1].Bytes())
-	ev.DepositNonce = big.NewInt(0).SetBytes(log.Topics[2].Bytes()).Uint64()
-	ev.Status = uint8(big.NewInt(0).SetBytes(log.Topics[3].Bytes()).Uint64())
+	ev.OriginChainID = utils.BytesToBytes8(log.Topics[1].Bytes())
+	ev.DestinationChainID = utils.BytesToBytes8(log.Topics[2].Bytes())
+	ev.RecipientAddress = common.BytesToAddress(log.Topics[3].Bytes())
 
 	fmt.Printf("ProposalEvent\n")
 	fmt.Printf("destination chain ID: 0x%s\n", common.Bytes2Hex(ev.DestinationChainID[:]))
