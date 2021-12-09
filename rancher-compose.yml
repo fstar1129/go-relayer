@@ -1,8 +1,0 @@
-version: '2'
-services:
-  db:
-    scale: 5
-    start_on_create: true
-  relayer:
-    scale: 5
-    start_on_create: true
