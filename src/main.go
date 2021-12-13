@@ -19,7 +19,7 @@ func main() {
 	cfg := config.NewViperConfig()
 	srvURL := cfg.ReadServiceConfig()
 	laCfg := cfg.ReadLachainConfig()
-	ethCfg, _ := cfg.ReadWorkersConfig()
+	posCfg, bscCfg := cfg.ReadWorkersConfig()
 	dbConfig := cfg.ReadDBConfig()
 	dbURL := fmt.Sprintf(dbConfig.URL, dbConfig.DBHOST, dbConfig.DBPORT, dbConfig.DBUser, dbConfig.DBName, dbConfig.DBPassword, dbConfig.DBSSL)
 	// init logrus logger
@@ -58,7 +58,7 @@ func main() {
 		logger.Infof("System signal: %+v\n", sign)
 		cancel()
 	}()
-	app := app.NewApp(logger, srvURL, db, laCfg, ethCfg)
+	app := app.NewApp(logger, srvURL, db, laCfg, posCfg, bscCfg)
 	//run App
 	app.Run(ctx)
 }
