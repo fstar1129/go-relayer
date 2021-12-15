@@ -6,6 +6,8 @@ var (
 	POSChain string = "POS"
 	// BSCChain - Binance chain
 	BSCChain string = "BSC"
+	//EthChain - ropsten testnet
+	EthChain string = "ETH"
 	// BtcChain - Bitcoin chain
 	BtcChain string = "BTC"
 )
