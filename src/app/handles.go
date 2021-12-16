@@ -33,7 +33,6 @@ func (a *App) SwapStatusHandler(w http.ResponseWriter, r *http.Request) {
 		Receipt: mux.Vars(r)["receipt"],
 		Amount:  mux.Vars(r)["amount"],
 	}
-
 	if msg.Chain == "" || msg.Sender == "" || msg.Receipt == "" || msg.Amount == "" {
 		a.logger.Errorf("Empty request(/status/{destination_chain}/{sender}/{receipt}/{amount})")
 		common.ResponJSON(w, http.StatusInternalServerError, createNewError("empty request", ""))
@@ -56,6 +55,6 @@ func (a *App) StatusHandler(w http.ResponseWriter, r *http.Request) {
 		common.ResponError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-
+	println("in status")
 	common.ResponJSON(w, http.StatusOK, status)
 }
