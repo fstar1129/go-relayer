@@ -69,25 +69,24 @@ func (r *RelayerSRV) Run() {
 	}
 }
 
-// func (r *RelayerSRV) GetSwapStatus(req *models.SwapStatus) (storage.SwapStatus, error) {
-// 	swapType := storage.SwapTypeUnbind
-// 	if req.Chain == storage.LaChain {
-// 		swapType = storage.SwapTypeBind
-// 	}
+func (r *RelayerSRV) GetSwapStatus(req *models.SwapStatus) (storage.SwapStatus, error) {
+	swapType := storage.SwapTypeUnbind
+	if req.Chain == storage.LaChain {
+		swapType = storage.SwapTypeBind
+	}
 
-// 	// swap, err := r.storage.GetSwapByStatus(swapType, req.Sender, req.Receipt, req.Amount)
-// 	// if err != nil {
-// 		// log
-// 		// r.logger.Errorln(err)
-// 		// return "", err
-// 	}
+	swap, err := r.storage.GetSwapByStatus(swapType, req.Sender, req.Receipt, req.Amount)
+	if err != nil {
+		r.logger.Errorln(err)
+		return "", err
+	}
 
-// 	if swap != nil {
-// 		return swap.Status, nil
-// 	}
+	if swap != nil {
+		return swap.Status, nil
+	}
 
-// 	return "", nil
-// }
+	return "", nil
+}
 
 // Status ...
 func (r *RelayerSRV) StatusOfWorkers() (map[string]*models.WorkerStatus, error) {
