@@ -70,11 +70,11 @@ func (r *RelayerSRV) Run() {
 }
 
 func (r *RelayerSRV) GetSwapStatus(req *models.SwapStatus) (storage.SwapStatus, error) {
-	// swapType := storage.SwapTypeUnbind
-	// if req.Chain == storage.LaChain {
-	// 	swapType = storage.SwapTypeBind
-	// }
-	swap, err := r.storage.GetSwapByStatus(req.Sender, req.Receipt, req.Amount)
+	swapType := storage.SwapTypeUnbind
+	if req.Chain == storage.LaChain {
+		swapType = storage.SwapTypeBind
+	}
+	swap, err := r.storage.GetSwapByStatus(swapType, req.Sender, req.Receipt, req.Amount)
 	if err != nil {
 		r.logger.Errorln(err)
 		return "", err
