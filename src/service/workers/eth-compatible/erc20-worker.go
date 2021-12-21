@@ -213,6 +213,7 @@ func (w *Erc20Worker) GetHeight() (int64, error) {
 func (w *Erc20Worker) Vote(depositNonce uint64, originchainID [8]byte, destinationChainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error) {
 	auth, err := w.getTransactor()
 	if err != nil {
+		println("cannot get transactor")
 		return "", err
 	}
 
@@ -266,21 +267,25 @@ func (w *Erc20Worker) GetTxCountLatest() (uint64, error) {
 	var result uint64
 	rpcClient := jsonrpc.NewClient(w.provider)
 
-	resp, err := rpcClient.Call("eth_getTransactionCount", w.config.WorkerAddr.Hex(), "latest")
+	resp, err := rpcClient.Call("eth_getTransactionCount", w.config.WorkerAddr.Hex(), "pending")
 	if err != nil {
 		return 0, err
 	}
-
 	if err := resp.GetObject(&result); err != nil {
 		return 0, err
 	}
-
+	println(result)
 	return result, nil
 }
 
 // GetTransactor ...
 func (w *Erc20Worker) getTransactor() (auth *bind.TransactOpts, err error) {
 	privateKey, err := utils.GetPrivateKey(w.config)
+	if err != nil {
+		return nil, err
+	}
+
+	auth, err = bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(w.chainID))
 	if err != nil {
 		return nil, err
 	}
@@ -299,10 +304,6 @@ func (w *Erc20Worker) getTransactor() (auth *bind.TransactOpts, err error) {
 		}
 	}
 
-	auth, err = bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(w.chainID))
-	if err != nil {
-		return nil, err
-	}
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)                // in wei
 	auth.GasLimit = uint64(w.config.GasLimit) // in units

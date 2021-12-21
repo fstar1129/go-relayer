@@ -35,7 +35,7 @@ func (v *viperConfig) Init() {
 	viper.SetEnvKeyReplacer(replacer)
 	viper.SetConfigType(`json`)
 	viper.SetConfigName(os.Getenv("FILE_NAME"))
-	// viper.SetConfigName("config1.json")
+	// viper.SetConfigName("config2.json")
 	if _, err := os.Stat("./config.json.local"); !os.IsNotExist(err) {
 		viper.SetConfigFile(`config.json.local`)
 	}

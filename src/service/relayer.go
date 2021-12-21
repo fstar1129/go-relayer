@@ -62,6 +62,8 @@ func (r *RelayerSRV) Run() {
 	// start watcher
 	r.Watcher.Run()
 	go r.emitChainSendClaim()
+	go r.emitChainSendPass()
+	go r.emitChainSendSpend()
 	// run Worker workers
 	for _, worker := range r.Workers {
 		go r.ConfirmWorkerTx(worker)
@@ -79,7 +81,6 @@ func (r *RelayerSRV) GetSwapStatus(req *models.SwapStatus) (storage.SwapStatus, 
 		r.logger.Errorln(err)
 		return "", err
 	}
-
 	if swap != nil {
 		return swap.Status, nil
 	}
@@ -123,7 +124,7 @@ func (r *RelayerSRV) ConfirmWorkerTx(worker workers.IWorker) {
 
 		// CREATE NEW SWAPS
 		for _, txLog := range txLogs {
-			if txLog.TxType == storage.TxTypeDeposit {
+			if txLog.Status == storage.TxStatusInit {
 				swapType := storage.SwapTypeBind
 				if txLog.Chain == storage.LaChain {
 					swapType = storage.SwapTypeUnbind
@@ -147,7 +148,7 @@ func (r *RelayerSRV) ConfirmWorkerTx(worker workers.IWorker) {
 					DestinationChainID: txLog.DestinationChainID,
 					OriginChainID:      txLog.OriginСhainID,
 					Height:             txLog.Height,
-					Status:             storage.SwapStatusDepositConfirmed,
+					Status:             txLog.SwapStatus,
 					CreateTime:         time.Now().Unix(),
 				}
 				newSwaps = append(newSwaps, newSwap)

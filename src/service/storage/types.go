@@ -61,6 +61,7 @@ const (
 	SwapStatusDepositConfirmed SwapStatus = "DEPOSIT_CONFIRMED"
 	SwapStatusDepositFailed    SwapStatus = "DEPOSIT_FAILED"
 	SwapStatusPassedConfirmed  SwapStatus = "PASSED_CONFIRMED"
+	SwapStatusPassedSent       SwapStatus = "PASSED_SENT"
 	SwapStatusSpendSent        SwapStatus = "SPEND_SENT"
 	SwapStatusSpendConfirmed   SwapStatus = "SPEND_CONFIRMED"
 

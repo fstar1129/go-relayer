@@ -24,16 +24,16 @@ type TxLog struct {
 	// sender address should be encoded by each relayer
 	SenderAddr string `gorm:"type:TEXT"`
 	// receiver address should be encoded by each relayer
-	ReceiverAddr       string `gorm:"type:TEXT"`
-	SenderWorkerChain  string `gorm:"type:TEXT"`
-	WorkerChainAddr    string `gorm:"type:TEXT"`
-	InAmount           string `gorm:"type:TEXT"`
-	OutAmount          string `gorm:"type:TEXT"`
-	OriginСhainID      string `gorm:"type:TEXT"`
-	DestinationChainID string `gorm:"type:TEXT"`
-	DepositNonce       uint64 `gorm:"type:BIGINT"`
-	ResourceID         string `gorm:"type:TEXT"`
-	SwapStatus         uint8
+	ReceiverAddr       string      `gorm:"type:TEXT"`
+	SenderWorkerChain  string      `gorm:"type:TEXT"`
+	WorkerChainAddr    string      `gorm:"type:TEXT"`
+	InAmount           string      `gorm:"type:TEXT"`
+	OutAmount          string      `gorm:"type:TEXT"`
+	OriginСhainID      string      `gorm:"type:TEXT"`
+	DestinationChainID string      `gorm:"type:TEXT"`
+	DepositNonce       uint64      `gorm:"type:BIGINT"`
+	ResourceID         string      `gorm:"type:TEXT"`
+	SwapStatus         SwapStatus  `gorm:"type:TEXT"`
 	ExpireHeight       int64       `gorm:"type:BIGINT"`
 	Timestamp          int64       `gorm:"type:BIGINT"`
 	BlockHash          string      `gorm:"type:TEXT"`

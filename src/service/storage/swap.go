@@ -28,7 +28,7 @@ func (d *DataBase) GetSwapByStatus(swapType SwapType, sender, receipt string, am
 	swap := &Swap{}
 	if err := d.db.Where("type = ? and sender_addr = ? and receiver_addr = ? and out_amount = ? and status in (?)",
 		swapType, sender, receipt, amount,
-		[]SwapStatus{SwapStatusDepositConfirmed, SwapStatusClaimSent, SwapStatusClaimConfirmed, SwapStatusClaimSentFailed, SwapStatusDepositFailed, SwapStatusPassedConfirmed, SwapStatusSpendSent, SwapStatusSpendConfirmed, SwapStatusRejected}).
+		[]SwapStatus{SwapStatusDepositConfirmed, SwapStatusClaimSent, SwapStatusClaimConfirmed, SwapStatusClaimSentFailed, SwapStatusDepositFailed, SwapStatusPassedConfirmed, SwapStatusPassedSent, SwapStatusSpendSent, SwapStatusSpendConfirmed, SwapStatusRejected}).
 		Find(&swap).Error; err != nil {
 		return nil, err
 	}
@@ -42,7 +42,6 @@ func (d *DataBase) UpdateSwapStatus(swap *Swap, status SwapStatus, rOutAmount st
 		"status":      status,
 		"update_time": time.Now().Unix(),
 	}
-
 	if rOutAmount != "" {
 		toUpdate["r_out_amount"] = rOutAmount
 	}

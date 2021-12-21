@@ -70,13 +70,14 @@ func (ev DepositEvent) ToTxLog() *storage.TxLog {
 		TxType:             storage.TxTypeDeposit,
 		DestinationChainID: common.Bytes2Hex(ev.DestinationChainID[:]),
 		OriginСhainID:      common.Bytes2Hex(ev.OriginChainID[:]),
-		SwapID:             utils.CalcutateSwapID(string(ev.DataHash[:]), string(ev.DepositNonce)),
+		SwapID:             utils.CalcutateSwapID(string(ev.DestinationChainID[:]), string(ev.DepositNonce)),
 		ResourceID:         common.Bytes2Hex(ev.ResourceID[:]),
 		DepositNonce:       ev.DepositNonce,
 		SenderAddr:         ev.Depositor.Hex(),
 		ReceiverAddr:       ev.RecipientAddress.Hex(),
 		InTokenAddr:        ev.TokenAddress.Hex(),
 		OutAmount:          ev.Amount.String(),
+		SwapStatus:         storage.SwapStatusDepositConfirmed,
 	}
 }
 
@@ -85,17 +86,20 @@ func (ev ProposalEvent) ToTxLog() *storage.TxLog {
 		TxType:             storage.TxTypeVote,
 		DestinationChainID: common.Bytes2Hex(ev.DestinationChainID[:]),
 		OriginСhainID:      common.Bytes2Hex(ev.OriginChainID[:]),
-		SwapID:             utils.CalcutateSwapID(string(ev.DataHash[:]), string(ev.DepositNonce)),
+		SwapID:             utils.CalcutateSwapID(string(ev.DestinationChainID[:]), string(ev.DepositNonce)),
 		ResourceID:         common.Bytes2Hex(ev.ResourceID[:]),
 		DepositNonce:       ev.DepositNonce,
 		ReceiverAddr:       ev.RecipientAddress.Hex(),
 		OutAmount:          ev.Amount.String(),
+		SwapStatus:         storage.SwapStatusClaimSent,
 	}
 
 	if ev.Status == uint8(2) {
 		txlog.TxType = storage.TxTypePassed
+		txlog.SwapStatus = storage.SwapStatusPassedConfirmed
 	} else if ev.Status == uint8(3) {
 		txlog.TxType = storage.TxTypeSpend
+		txlog.SwapStatus = storage.SwapStatusSpendConfirmed
 	}
 
 	return txlog
