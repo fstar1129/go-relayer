@@ -14,8 +14,9 @@ func (r *RelayerSRV) emitChainSendSpend() {
 
 		for _, swap := range swaps {
 			r.logger.Info("updating spend status")
-			println()
 			r.storage.UpdateSwapStatus(swap, storage.SwapStatusSpendSent, "")
+			r.logger.Infof("send spend tx success | swap_ID=%s",
+				swap.SwapID)
 		}
 
 		time.Sleep(2 * time.Second)

@@ -14,7 +14,6 @@ func (r *RelayerSRV) emitChainSendPass() {
 
 		for _, swap := range swaps {
 			r.logger.Info("updating passed status")
-			println(swap.Status)
 			r.storage.UpdateSwapStatus(swap, storage.SwapStatusPassedSent, "")
 			r.logger.Infof("send passed tx success | swap_ID=%s",
 				swap.SwapID)
