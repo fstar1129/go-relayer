@@ -27,13 +27,14 @@ import (
 
 // Erc20Worker ...
 type Erc20Worker struct {
-	provider         string
-	chainName        string
-	chainID          int64
-	logger           *logrus.Entry // logger
-	config           *models.WorkerConfig
-	client           *ethclient.Client
-	swapContractAddr common.Address
+	provider           string
+	chainName          string
+	chainID            int64
+	destinationChainID string
+	logger             *logrus.Entry // logger
+	config             *models.WorkerConfig
+	client             *ethclient.Client
+	swapContractAddr   common.Address
 }
 
 // NewErc20Worker ...
@@ -65,13 +66,14 @@ func NewErc20Worker(logger *logrus.Logger, cfg *models.WorkerConfig) *Erc20Worke
 
 	// init token addresses
 	return &Erc20Worker{
-		chainName:        cfg.ChainName,
-		chainID:          cfg.ChainID,
-		logger:           logger.WithField("worker", cfg.ChainName),
-		provider:         cfg.Provider,
-		config:           cfg,
-		client:           client,
-		swapContractAddr: cfg.ContractAddr,
+		chainName:          cfg.ChainName,
+		chainID:            cfg.ChainID,
+		destinationChainID: cfg.DestinationChainID,
+		logger:             logger.WithField("worker", cfg.ChainName),
+		provider:           cfg.Provider,
+		config:             cfg,
+		client:             client,
+		swapContractAddr:   cfg.ContractAddr,
 	}
 }
 
@@ -83,6 +85,10 @@ func (w *Erc20Worker) GetChainName() string {
 // GetChainID returns chain id
 func (w *Erc20Worker) GetChainID() int64 {
 	return w.chainID
+}
+
+func (w *Erc20Worker) GetDestinationID() string {
+	return w.destinationChainID
 }
 
 // // GetChain returns chain name

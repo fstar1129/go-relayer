@@ -125,9 +125,9 @@ func (r *RelayerSRV) ConfirmWorkerTx(worker workers.IWorker) {
 		// CREATE NEW SWAPS
 		for _, txLog := range txLogs {
 			if txLog.Status == storage.TxStatusInit {
-				swapType := storage.SwapTypeBind
-				if txLog.Chain == storage.LaChain {
-					swapType = storage.SwapTypeUnbind
+				swapType := storage.SwapTypeUnbind
+				if txLog.DestinationChainID == r.laWorker.GetDestinationID() {
+					swapType = storage.SwapTypeBind
 				}
 				// reject swap request if receiver addr and worker chain addr both are r addr
 				// if worker.IsSameAddress(txLog.ReceiverAddr, worker.GetWorkerAddress()) &&

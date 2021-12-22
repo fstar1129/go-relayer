@@ -45,7 +45,7 @@ func (d *DataBase) UpdateSwapStatus(swap *Swap, status SwapStatus, rOutAmount st
 	if rOutAmount != "" {
 		toUpdate["r_out_amount"] = rOutAmount
 	}
-
+	println(status)
 	d.db.Model(swap).Update(toUpdate)
 }
 
