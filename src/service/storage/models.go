@@ -46,11 +46,10 @@ type TxLog struct {
 
 // Swap ...
 type Swap struct {
-	ID                 int64
+	SwapID             string `gorm:"primaryKey"`
 	Type               SwapType
 	DestinationChainID string
 	OriginChainID      string
-	SwapID             string
 	SenderAddr         string
 	ReceiverAddr       string
 	//	WorkerChainAddr   string

@@ -23,6 +23,15 @@ func (d *DataBase) GetSwapsByTypeAndStatuses(statuses []SwapStatus) []*Swap {
 	return swaps
 }
 
+//GetSwapBySwapID
+func (d *DataBase) GetSwapBySwapID(swapID string) []*Swap {
+	swaps := make([]*Swap, 0)
+	if err := d.db.Where("swap_id = ?", swapID).Find((&swaps)).Error; err != nil {
+		return nil
+	}
+	return swaps
+}
+
 // GetSwapByStatus ...
 func (d *DataBase) GetSwapByStatus(swapType SwapType, sender, receipt string, amount string) (*Swap, error) {
 	swap := &Swap{}
@@ -45,7 +54,6 @@ func (d *DataBase) UpdateSwapStatus(swap *Swap, status SwapStatus, rOutAmount st
 	if rOutAmount != "" {
 		toUpdate["r_out_amount"] = rOutAmount
 	}
-	println(status)
 	d.db.Model(swap).Update(toUpdate)
 }
 

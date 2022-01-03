@@ -156,7 +156,7 @@ func (r *RelayerSRV) ConfirmWorkerTx(worker workers.IWorker) {
 			txHashes = append(txHashes, txLog.TxHash)
 		}
 
-		//
+		//stores new txLogs in db
 		if err := r.storage.ConfirmWorkerTx(worker.GetChainName(), txLogs, txHashes, newSwaps); err != nil {
 			r.logger.Errorf("compensate new swap tx error, err=%s", err)
 		}

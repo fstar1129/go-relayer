@@ -280,7 +280,6 @@ func (w *Erc20Worker) GetTxCountLatest() (uint64, error) {
 	if err := resp.GetObject(&result); err != nil {
 		return 0, err
 	}
-	println(result)
 	return result, nil
 }
 
