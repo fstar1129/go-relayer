@@ -152,8 +152,8 @@ func (r *RelayerSRV) ConfirmWorkerTx(worker workers.IWorker) {
 					CreateTime:         time.Now().Unix(),
 				}
 				newSwaps = append(newSwaps, newSwap)
+				txHashes = append(txHashes, txLog.TxHash)
 			}
-			txHashes = append(txHashes, txLog.TxHash)
 		}
 
 		//stores new txLogs in db

@@ -13,10 +13,9 @@ type BlockLog struct {
 
 // TxLog ...
 type TxLog struct {
-	ID    int64
-	Chain string `gorm:"type:TEXT"`
+	SwapID string `gorm:"primaryKey"`
+	Chain  string `gorm:"type:TEXT"`
 	// swap id should be hex encoded bytes without '0x' prefix
-	SwapID       string `gorm:"type:TEXT"`
 	TxType       TxType `gorm:"type:tx_types"`
 	TxHash       string `gorm:"type:TEXT"`
 	InTokenAddr  string `gorm:"type:TEXT"`

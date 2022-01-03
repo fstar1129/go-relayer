@@ -8,10 +8,12 @@ import (
 
 // GetConfirmedTxsLog ...
 func (d *DataBase) GetConfirmedTxsLog(tx *gorm.DB, chain string, swap *Swap) (txLogs []*TxLog, err error) {
-	query := tx.Where("chain = ? and status = ? and swap_id = ?", chain, TxStatusConfirmed, swap.SwapID)
-	if err := query.Order("id desc").Find(&txLogs).Error; err != nil {
-		return txLogs, err
+	if err := tx.Where("chain = ? and status = ? and swap_id = ?", chain, TxStatusConfirmed, swap.SwapID).Find(&txLogs).Error; err != nil {
+		return nil, err
 	}
+	// if err := query.Order("id desc").Find(&txLogs).Error; err != nil {
+	// 	return txLogs, err
+	// }
 
 	return txLogs, nil
 }
