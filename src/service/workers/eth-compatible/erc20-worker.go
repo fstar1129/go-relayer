@@ -127,7 +127,6 @@ func (w *Erc20Worker) GetStatus() (*models.WorkerStatus, error) {
 func (w *Erc20Worker) GetBlockAndTxs(height int64) (*models.BlockAndTxLogs, error) {
 	var head *Header
 	rpcClient := jsonrpc.NewClient(w.provider)
-
 	resp, err := rpcClient.Call("eth_getBlockByNumber", fmt.Sprintf("0x%x", height), false)
 	if err != nil {
 		w.logger.Errorln("while call eth_getBlockByNumber, err = ", err)
