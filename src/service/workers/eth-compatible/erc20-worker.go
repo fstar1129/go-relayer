@@ -35,10 +35,11 @@ type Erc20Worker struct {
 	config             *models.WorkerConfig
 	client             *ethclient.Client
 	swapContractAddr   common.Address
+	db                 *storage.DataBase
 }
 
 // NewErc20Worker ...
-func NewErc20Worker(logger *logrus.Logger, cfg *models.WorkerConfig) *Erc20Worker {
+func NewErc20Worker(logger *logrus.Logger, cfg *models.WorkerConfig, db *storage.DataBase) *Erc20Worker {
 	client, err := ethclient.Dial(cfg.Provider)
 	if err != nil {
 		panic("new eth client error")
@@ -74,6 +75,7 @@ func NewErc20Worker(logger *logrus.Logger, cfg *models.WorkerConfig) *Erc20Worke
 		config:             cfg,
 		client:             client,
 		swapContractAddr:   cfg.ContractAddr,
+		db:                 db,
 	}
 }
 
@@ -186,7 +188,6 @@ func (w *Erc20Worker) getLogs(blockHash common.Hash) ([]*storage.TxLog, error) {
 
 		txLog := event.ToTxLog()
 
-		// if txLog.TxType == storage.TxTypeDeposit {
 		// 	w.logger.Infof("Deposited\ndestination chain ID: 0x%s\nresource ID: 0x%s\ndeposit nonce: %d\nrecipient address: %s\namount address: %s\ntoken address: %s\n",
 		// 		txLog.DestinationChainID, txLog.ResourceID, txLog.DepositNonce, txLog.SenderAddr, txLog.ReceiverAddr, txLog.OutAmount, txLog.InTokenAddr)
 		// } else if txLog.TxType == storage.TxTypeClaim {
@@ -199,7 +200,13 @@ func (w *Erc20Worker) getLogs(blockHash common.Hash) ([]*storage.TxLog, error) {
 		txLog.TxHash = log.TxHash.Hex()
 		txLog.Status = storage.TxStatusInit
 
-		models = append(models, txLog)
+		if txLog.TxType == storage.TxTypeDeposit {
+			previousID := w.db.GetSwapBySwapID(txLog.SwapID)
+			println(len(previousID))
+			if len(previousID) == 0 {
+				models = append(models, txLog)
+			}
+		}
 	}
 
 	return models, nil

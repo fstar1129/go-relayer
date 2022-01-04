@@ -37,13 +37,13 @@ func CreateNewRelayerSRV(logger *logrus.Logger, gormDB *gorm.DB, laConfig, posCf
 	inst := RelayerSRV{
 		logger:   logger,
 		storage:  db,
-		laWorker: eth.NewErc20Worker(logger, laConfig),
+		laWorker: eth.NewErc20Worker(logger, laConfig, db),
 		Workers:  make(map[string]workers.IWorker),
 	}
 	// create erc20 worker
-	inst.Workers[storage.POSChain] = eth.NewErc20Worker(logger, posCfg)
-	inst.Workers[storage.BSCChain] = eth.NewErc20Worker(logger, bscCfg)
-	inst.Workers[storage.EthChain] = eth.NewErc20Worker(logger, ethCfg)
+	inst.Workers[storage.POSChain] = eth.NewErc20Worker(logger, posCfg, db)
+	inst.Workers[storage.BSCChain] = eth.NewErc20Worker(logger, bscCfg, db)
+	inst.Workers[storage.EthChain] = eth.NewErc20Worker(logger, ethCfg, db)
 	// // create la worker
 	inst.Workers[storage.LaChain] = inst.laWorker
 
