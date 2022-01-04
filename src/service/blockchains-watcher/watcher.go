@@ -81,13 +81,13 @@ func (w *WatcherSRV) getBlock(worker workers.IWorker, curHeight, nextHeight int6
 	parentHash := blockAndTxLogs.ParentBlockHash
 	if curHeight != 0 && parentHash != curBlockHash {
 		// w.logger.Infof("delete %s block at height %d, hash=%s(parent hash = %s)", worker.GetChainName(), curHeight, curBlockHash, parentHash)
-		return nil
+		return fmt.Errorf("parent hash not matching dumping block=%d", nextHeight)
 	}
 
 	nextBlockLog := storage.BlockLog{
 		Chain:      worker.GetChainName(),
 		BlockHash:  blockAndTxLogs.BlockHash,
-		ParentHash: blockAndTxLogs.ParentBlockHash,
+		ParentHash: parentHash,
 		Height:     blockAndTxLogs.Height,
 		BlockTime:  blockAndTxLogs.BlockTime,
 		Type:       storage.BlockTypeCurrent,
