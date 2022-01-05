@@ -206,6 +206,8 @@ func (w *Erc20Worker) getLogs(blockHash common.Hash) ([]*storage.TxLog, error) {
 			if len(previousID) == 0 {
 				models = append(models, txLog)
 			}
+		} else {
+			models = append(models, txLog)
 		}
 	}
 
