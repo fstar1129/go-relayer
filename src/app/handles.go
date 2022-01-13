@@ -55,6 +55,5 @@ func (a *App) StatusHandler(w http.ResponseWriter, r *http.Request) {
 		common.ResponError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	println("in status")
 	common.ResponJSON(w, http.StatusOK, status)
 }
