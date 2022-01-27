@@ -141,7 +141,7 @@ func (w *Erc20Worker) GetBlockAndTxs(height int64) (*models.BlockAndTxLogs, erro
 	}
 
 	if head == nil {
-		return nil, fmt.Errorf("not found")
+		return nil, fmt.Errorf("GetObject head not found for block 0x%x", height)
 	}
 
 	logs, err := w.getLogs(head.Hash)
@@ -172,6 +172,7 @@ func (w *Erc20Worker) getLogs(blockHash common.Hash) ([]*storage.TxLog, error) {
 		Topics:    [][]common.Hash{},
 	})
 	if err != nil {
+		w.logger.WithFields(logrus.Fields{"function": "GetLogs()"}).Errorf("get event log error, err=%s", err)
 		return nil, err
 	}
 
@@ -228,7 +229,7 @@ func (w *Erc20Worker) GetHeight() (int64, error) {
 func (w *Erc20Worker) Vote(depositNonce uint64, originchainID [8]byte, destinationChainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error) {
 	auth, err := w.getTransactor()
 	if err != nil {
-		println("cannot get transactor")
+		w.logger.Errorf("vote: cannot get transactor")
 		return "", err
 	}
 
