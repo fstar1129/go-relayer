@@ -153,14 +153,13 @@ func (r *RelayerSRV) ConfirmWorkerTx(worker workers.IWorker) {
 				}
 				newSwaps = append(newSwaps, newSwap)
 				txHashes = append(txHashes, txLog.TxHash)
+			    r.logger.Infof("compensate new swap tx coplete, tx %v, logs: %v, swaps: %v", txHashes, txLogs, newSwaps)
 			}
 		}
 
 		//stores new txLogs in db
 		if err := r.storage.ConfirmWorkerTx(worker.GetChainName(), txLogs, txHashes, newSwaps); err != nil {
 			r.logger.Errorf("compensate new swap tx error, err=%s", err)
-		} else {
-			r.logger.Infof("compensate new swap tx coplete, tx %v, logs: %v, swaps: %v", txHashes, txLogs, newSwaps)
 		}
 
 		time.Sleep(2 * time.Second)
