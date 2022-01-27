@@ -169,6 +169,7 @@ func (w *Erc20Worker) getLogs(blockHash common.Hash) ([]*storage.TxLog, error) {
 	logs, err := w.client.FilterLogs(context.Background(), ethereum.FilterQuery{
 		BlockHash: &blockHash,
 		Addresses: []common.Address{w.swapContractAddr},
+		Topics:    [][]common.Hash{},
 	})
 	if err != nil {
 		return nil, err
