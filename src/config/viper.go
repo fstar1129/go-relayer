@@ -40,7 +40,7 @@ func (v *viperConfig) Init() {
 		viper.SetConfigFile(`config.json.local`)
 	}
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Println(err)
+		fmt.Printf("read config error: %s", err)
 	}
 }
 func (v *viperConfig) GetString(key string) string {

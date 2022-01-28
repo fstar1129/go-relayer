@@ -78,7 +78,7 @@ func (r *RelayerSRV) GetSwapStatus(req *models.SwapStatus) (storage.SwapStatus, 
 	}
 	swap, err := r.storage.GetSwapByStatus(swapType, req.Sender, req.Receipt, req.Amount)
 	if err != nil {
-		r.logger.Errorln(err)
+		r.logger.Errorf("GetSwapByStatus failed with error: %v", err)
 		return "", err
 	}
 	if swap != nil {
@@ -153,7 +153,7 @@ func (r *RelayerSRV) ConfirmWorkerTx(worker workers.IWorker) {
 				}
 				newSwaps = append(newSwaps, newSwap)
 				txHashes = append(txHashes, txLog.TxHash)
-			    r.logger.Infof("compensate new swap tx coplete, tx %v, logs: %v, swaps: %v", txHashes, txLogs, newSwaps)
+				r.logger.Infof("compensate new swap tx coplete, tx %v, logs: %v, swaps: %v", txHashes, txLogs, newSwaps)
 			}
 		}
 
