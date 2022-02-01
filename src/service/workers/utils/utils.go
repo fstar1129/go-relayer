@@ -79,8 +79,14 @@ func CalcutateSwapID(originChainID, destChainID, nonce string) string {
 	return hexutil.Encode(crypto.Keccak256([]byte(originChainID), []byte(destChainID))) + nonce
 }
 
-func ConvertDecimals(amount string, inDecimals, outDecimals int64) int64 {
+func Convertto6Decimals(amount string) int64 {
 	value, _ := strconv.ParseInt(amount, 10, 0)
-	ret := value*10 ^ (outDecimals - inDecimals)
+	ret := value / 1000000000000
+	return ret
+}
+
+func Convertto18Decimals(amount string) int64 {
+	value, _ := strconv.ParseInt(amount, 10, 0)
+	ret := value * 1000000000000
 	return ret
 }

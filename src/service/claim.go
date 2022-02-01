@@ -44,18 +44,14 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 	tetherRID := r.storage.FetchResourceIDByName("tether").ID
 	bscDestID := r.Workers[storage.BSCChain].GetDestinationID()
 	var amount int64
-	println(swap.OriginChainID == bscDestID, "origin check")
-	println(swap.ResourceID == tetherRID, "R ID check")
 	if swap.OriginChainID == bscDestID && swap.ResourceID == tetherRID {
-		println("in origin")
-		amount = utils.ConvertDecimals(swap.OutAmount, 18, 6)
+		amount = utils.Convertto6Decimals(swap.OutAmount)
 	} else if swap.DestinationChainID == bscDestID && swap.ResourceID == tetherRID {
-		println("in dest")
-		amount = utils.ConvertDecimals(swap.OutAmount, 6, 18)
+		amount = utils.Convertto18Decimals(swap.OutAmount)
 	} else {
 		amount, _ = strconv.ParseInt(swap.OutAmount, 10, 0)
 	}
-
+	println(amount)
 	r.logger.Infof("claim parameters: depositNonce(%d) | sender(%s) | outAmount(%d) | resourceID(%s)\n",
 		swap.DepositNonce, swap.SenderAddr, amount, swap.ResourceID)
 
