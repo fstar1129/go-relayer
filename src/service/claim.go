@@ -47,7 +47,7 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 	} else if swap.DestinationChainID == r.Workers[storage.BSCChain].GetDestinationID() && swap.ResourceID == r.storage.FetchResourceID("tether").Name {
 		amount = utils.ConvertDecimals(swap.OutAmount, 6, 18)
 	} else {
-		amount, _ = strconv.ParseInt(swap.OutAmount, 10, 32)
+		amount, _ = strconv.ParseInt(swap.OutAmount, 10, 0)
 	}
 
 	r.logger.Infof("claim parameters: depositNonce(%d) | sender(%s) | outAmount(%d) | resourceID(%s)\n",
