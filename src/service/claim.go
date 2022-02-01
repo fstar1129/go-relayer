@@ -2,6 +2,7 @@ package rlr
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
@@ -40,11 +41,20 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 		CreateTime: time.Now().Unix(),
 	}
 
-	r.logger.Infof("claim parameters: depositNonce(%d) | sender(%s) | outAmount(%s) | resourceID(%s)\n",
-		swap.DepositNonce, swap.SenderAddr, swap.OutAmount, swap.ResourceID)
+	var amount int64
+	if swap.OriginChainID == r.Workers[storage.BSCChain].GetDestinationID() && swap.ResourceID == r.storage.FetchResourceID("tether").Name {
+		amount = utils.ConvertDecimals(swap.OutAmount, 18, 6)
+	} else if swap.DestinationChainID == r.Workers[storage.BSCChain].GetDestinationID() && swap.ResourceID == r.storage.FetchResourceID("tether").Name {
+		amount = utils.ConvertDecimals(swap.OutAmount, 6, 18)
+	} else {
+		amount, _ = strconv.ParseInt(swap.OutAmount, 10, 32)
+	}
+
+	r.logger.Infof("claim parameters: depositNonce(%d) | sender(%s) | outAmount(%d) | resourceID(%s)\n",
+		swap.DepositNonce, swap.SenderAddr, amount, swap.ResourceID)
 
 	txHash, err := worker.Vote(swap.DepositNonce, utils.StringToBytes8(swap.OriginChainID), utils.StringToBytes8(swap.DestinationChainID),
-		utils.StringToBytes32(swap.ResourceID), swap.ReceiverAddr, swap.OutAmount)
+		utils.StringToBytes32(swap.ResourceID), swap.ReceiverAddr, fmt.Sprint(amount))
 	if err != nil {
 		txSent.ErrMsg = err.Error()
 		txSent.Status = storage.TxSentStatusFailed

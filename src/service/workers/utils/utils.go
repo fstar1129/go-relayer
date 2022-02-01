@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"math"
 	"math/big"
+	"strconv"
 
 	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
 
@@ -76,4 +77,10 @@ func BytesToBytes8(b []byte) [8]byte {
 func CalcutateSwapID(originChainID, destChainID, nonce string) string {
 
 	return hexutil.Encode(crypto.Keccak256([]byte(originChainID), []byte(destChainID))) + nonce
+}
+
+func ConvertDecimals(amount string, inDecimals, outDecimals int64) int64 {
+	value, _ := strconv.ParseInt(amount, 10, 32)
+	ret := value * outDecimals / inDecimals
+	return ret
 }

@@ -7,6 +7,7 @@ import (
 
 	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
 	rlr "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -24,13 +25,13 @@ type App struct {
 
 // NewApp is initializes the app
 func NewApp(logger *logrus.Logger, addr string, db *gorm.DB,
-	laCfg, posCfg, bscCfg, ethCfg *models.WorkerConfig) *App {
+	laCfg, posCfg, bscCfg, ethCfg *models.WorkerConfig, resourceIDs []*storage.ResourceId) *App {
 	// create new app
 	inst := &App{
 		logger:  logger,
 		router:  mux.NewRouter(),
 		server:  &http.Server{Addr: addr},
-		relayer: rlr.CreateNewRelayerSRV(logger, db, laCfg, posCfg, bscCfg, ethCfg),
+		relayer: rlr.CreateNewRelayerSRV(logger, db, laCfg, posCfg, bscCfg, ethCfg, resourceIDs),
 	}
 	// set router
 	inst.router = mux.NewRouter()

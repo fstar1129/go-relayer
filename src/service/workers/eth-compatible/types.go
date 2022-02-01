@@ -2,6 +2,7 @@ package eth
 
 import (
 	"bytes"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -70,7 +71,7 @@ func (ev DepositEvent) ToTxLog() *storage.TxLog {
 		TxType:             storage.TxTypeDeposit,
 		DestinationChainID: common.Bytes2Hex(ev.DestinationChainID[:]),
 		OriginСhainID:      common.Bytes2Hex(ev.OriginChainID[:]),
-		SwapID:             utils.CalcutateSwapID(string(ev.OriginChainID[:]), string(ev.DestinationChainID[:]), string(ev.DepositNonce)),
+		SwapID:             utils.CalcutateSwapID(string(ev.OriginChainID[:]), string(ev.DestinationChainID[:]), fmt.Sprint(ev.DepositNonce)),
 		ResourceID:         common.Bytes2Hex(ev.ResourceID[:]),
 		DepositNonce:       ev.DepositNonce,
 		SenderAddr:         ev.Depositor.Hex(),
@@ -86,7 +87,7 @@ func (ev ProposalEvent) ToTxLog() *storage.TxLog {
 		TxType:             storage.TxTypeVote,
 		DestinationChainID: common.Bytes2Hex(ev.DestinationChainID[:]),
 		OriginСhainID:      common.Bytes2Hex(ev.OriginChainID[:]),
-		SwapID:             utils.CalcutateSwapID(string(ev.OriginChainID[:]), string(ev.DestinationChainID[:]), string(ev.DepositNonce)),
+		SwapID:             utils.CalcutateSwapID(string(ev.OriginChainID[:]), string(ev.DestinationChainID[:]), fmt.Sprint(ev.DepositNonce)),
 		ResourceID:         common.Bytes2Hex(ev.ResourceID[:]),
 		DepositNonce:       ev.DepositNonce,
 		ReceiverAddr:       ev.RecipientAddress.Hex(),

@@ -80,3 +80,8 @@ type TxSent struct {
 	CreateTime int64    `json:"create_time" gorm:"type:BIGINT"`
 	UpdateTime int64    `json:"update_time" gorm:"type:BIGINT"`
 }
+
+type ResourceId struct {
+	Name string `gorm:"primaryKey"`
+	ID   string `gorm:"type:TEXT"`
+}

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
 
 	"github.com/spf13/viper"
 )
@@ -16,6 +17,7 @@ type Config interface {
 	ReadWorkersConfig() (*models.WorkerConfig, *models.WorkerConfig, *models.WorkerConfig)
 	ReadLachainConfig() *models.WorkerConfig
 	ReadDBConfig() *models.StorageConfig
+	ReadResourceIDs() []*storage.ResourceId
 	GetString(key string) string
 	GetStringMap(key string) map[string]string
 	GetInt64(key string) int64
