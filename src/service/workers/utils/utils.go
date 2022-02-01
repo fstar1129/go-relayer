@@ -81,6 +81,6 @@ func CalcutateSwapID(originChainID, destChainID, nonce string) string {
 
 func ConvertDecimals(amount string, inDecimals, outDecimals int64) int64 {
 	value, _ := strconv.ParseInt(amount, 10, 0)
-	ret := value*10 ^ (inDecimals - outDecimals)
+	ret := value*10 ^ (outDecimals - inDecimals)
 	return ret
 }

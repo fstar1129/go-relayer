@@ -43,8 +43,10 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 
 	var amount int64
 	if swap.OriginChainID == r.Workers[storage.BSCChain].GetDestinationID() && swap.ResourceID == r.storage.FetchResourceID("tether").Name {
+		println("in origin")
 		amount = utils.ConvertDecimals(swap.OutAmount, 18, 6)
 	} else if swap.DestinationChainID == r.Workers[storage.BSCChain].GetDestinationID() && swap.ResourceID == r.storage.FetchResourceID("tether").Name {
+		println("in dest")
 		amount = utils.ConvertDecimals(swap.OutAmount, 6, 18)
 	} else {
 		amount, _ = strconv.ParseInt(swap.OutAmount, 10, 0)
