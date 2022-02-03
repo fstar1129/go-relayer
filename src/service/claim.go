@@ -2,7 +2,6 @@ package rlr
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
@@ -43,20 +42,19 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 
 	tetherRID := r.storage.FetchResourceIDByName("tether").ID
 	bscDestID := r.Workers[storage.BSCChain].GetDestinationID()
-	var amount int64
+	var amount string
 	if swap.OriginChainID == bscDestID && swap.ResourceID == tetherRID {
 		amount = utils.Convertto6Decimals(swap.OutAmount)
 	} else if swap.DestinationChainID == bscDestID && swap.ResourceID == tetherRID {
 		amount = utils.Convertto18Decimals(swap.OutAmount)
 	} else {
-		amount, _ = strconv.ParseInt(swap.OutAmount, 10, 0)
+		amount = swap.OutAmount
 	}
-	println(amount)
 	r.logger.Infof("claim parameters: depositNonce(%d) | sender(%s) | outAmount(%d) | resourceID(%s)\n",
 		swap.DepositNonce, swap.SenderAddr, amount, swap.ResourceID)
 
 	txHash, err := worker.Vote(swap.DepositNonce, utils.StringToBytes8(swap.OriginChainID), utils.StringToBytes8(swap.DestinationChainID),
-		utils.StringToBytes32(swap.ResourceID), swap.ReceiverAddr, fmt.Sprint(amount))
+		utils.StringToBytes32(swap.ResourceID), swap.ReceiverAddr, amount)
 	if err != nil {
 		txSent.ErrMsg = err.Error()
 		txSent.Status = storage.TxSentStatusFailed

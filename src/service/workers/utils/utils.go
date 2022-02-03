@@ -4,7 +4,6 @@ import (
 	"crypto/ecdsa"
 	"math"
 	"math/big"
-	"strconv"
 
 	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
 
@@ -79,14 +78,14 @@ func CalcutateSwapID(originChainID, destChainID, nonce string) string {
 	return hexutil.Encode(crypto.Keccak256([]byte(originChainID), []byte(destChainID))) + nonce
 }
 
-func Convertto6Decimals(amount string) int64 {
-	value, _ := strconv.ParseInt(amount, 10, 0)
-	ret := value / 1000000000000
-	return ret
+func Convertto6Decimals(amount string) string {
+	value, _ := new(big.Int).SetString(amount, 10)
+	ret := big.NewInt(0).Div(value, big.NewInt(1000000000000))
+	return ret.Text(10)
 }
 
-func Convertto18Decimals(amount string) int64 {
-	value, _ := strconv.ParseInt(amount, 10, 0)
-	ret := value * 1000000000000
-	return ret
+func Convertto18Decimals(amount string) string {
+	value, _ := new(big.Int).SetString(amount, 10)
+	ret := big.NewInt(0).Mul(big.NewInt(1000000000000), value)
+	return ret.Text(10)
 }
