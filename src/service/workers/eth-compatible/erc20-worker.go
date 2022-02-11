@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -134,7 +135,6 @@ func (w *Erc20Worker) GetBlockAndTxs(height int64) (*models.BlockAndTxLogs, erro
 		w.logger.Errorln("while call eth_getBlockByNumber, err = ", err)
 		return nil, err
 	}
-
 	if err := resp.GetObject(&head); err != nil {
 		w.logger.Errorln("while GetObject, err = ", err)
 		return nil, err
@@ -173,14 +173,15 @@ func (w *Erc20Worker) getLogs(curHeight, nextHeight int64) ([]*storage.TxLog, er
 	if curHeight == 0 {
 		curHeight = nextHeight - 1
 	}
-
 	logs, err := w.client.FilterLogs(context.Background(), ethereum.FilterQuery{
 		// BlockHash: &blockHash,
 		FromBlock: big.NewInt(curHeight + 1),
 		ToBlock:   big.NewInt(nextHeight),
 		Addresses: []common.Address{w.swapContractAddr},
+		Topics:    [][]common.Hash{},
 	})
 	if err != nil {
+		w.logger.WithFields(logrus.Fields{"function": "GetLogs()"}).Errorf("get event log error, err=%s", err)
 		return nil, err
 	}
 
@@ -288,7 +289,7 @@ func (w *Erc20Worker) Claimable(swapID common.Hash) (bool, error) {
 }
 
 func (w *Erc20Worker) GetTxCountLatest() (uint64, error) {
-	var result uint64
+	var result hexutil.Uint64
 	rpcClient := jsonrpc.NewClient(w.provider)
 
 	resp, err := rpcClient.Call("eth_getTransactionCount", w.config.WorkerAddr.Hex(), "pending")
@@ -298,7 +299,7 @@ func (w *Erc20Worker) GetTxCountLatest() (uint64, error) {
 	if err := resp.GetObject(&result); err != nil {
 		return 0, err
 	}
-	return result, nil
+	return uint64(result), nil
 }
 
 // GetTransactor ...
