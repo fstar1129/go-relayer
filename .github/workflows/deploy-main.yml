@@ -1,5 +1,9 @@
 name: Deploy Mainnet
-on: [workflow_dispatch]
+on:
+  workflow_dispatch:
+  push:
+  tags:
+  - v.*
 jobs:
   deploy:
     runs-on: ubuntu-latest
