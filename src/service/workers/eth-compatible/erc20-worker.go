@@ -213,17 +213,8 @@ func (w *Erc20Worker) getLogs(curHeight, nextHeight int64) ([]*storage.TxLog, er
 		txLog.TxHash = log.TxHash.Hex()
 		txLog.Status = storage.TxStatusInit
 
-		if txLog.TxType == storage.TxTypeDeposit {
-			previousID := w.db.GetSwapBySwapID(txLog.SwapID)
-			println(len(previousID))
-			if len(previousID) == 0 {
-				models = append(models, txLog)
-			}
-		} else {
-			models = append(models, txLog)
-		}
+		models = append(models, txLog)
 	}
-
 	return models, nil
 }
 
