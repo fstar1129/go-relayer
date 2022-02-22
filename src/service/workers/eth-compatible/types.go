@@ -101,6 +101,9 @@ func (ev ProposalEvent) ToTxLog() *storage.TxLog {
 	} else if ev.Status == uint8(3) {
 		txlog.TxType = storage.TxTypeSpend
 		txlog.SwapStatus = storage.SwapStatusSpendConfirmed
+	} else if ev.Status == uint8(4) {
+		txlog.TxType = storage.TxTypeExpired
+		txlog.SwapStatus = storage.SwapStatusExpiredConfirmed
 	}
 
 	return txlog

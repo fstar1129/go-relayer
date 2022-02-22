@@ -40,6 +40,7 @@ const (
 	TxTypeDeposit TxType = "DEPOSIT"
 	TxTypePassed  TxType = "PASSED"
 	TxTypeSpend   TxType = "SPEND"
+	TxTypeExpired TxType = "EXPIRED"
 )
 
 type SwapType string
@@ -64,6 +65,8 @@ const (
 	SwapStatusPassedSent       SwapStatus = "PASSED_SENT"
 	SwapStatusSpendSent        SwapStatus = "SPEND_SENT"
 	SwapStatusSpendConfirmed   SwapStatus = "SPEND_CONFIRMED"
+	SwapStatusExpiredConfirmed SwapStatus = "EXPIRED_CONFIRMED"
+	SwapStatusExpiredSent      SwapStatus = "EXPIRED_SENT"
 
 	SwapStatusRejected SwapStatus = "REJECTED"
 )

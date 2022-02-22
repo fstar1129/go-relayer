@@ -65,6 +65,7 @@ func (r *RelayerSRV) Run() {
 	go r.emitChainSendClaim()
 	go r.emitChainSendPass()
 	go r.emitChainSendSpend()
+	go r.emitChainSendExpire()
 	// run Worker workers
 	for _, worker := range r.Workers {
 		go r.ConfirmWorkerTx(worker)
