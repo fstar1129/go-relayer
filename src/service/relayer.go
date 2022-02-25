@@ -152,7 +152,9 @@ func (r *RelayerSRV) ConfirmWorkerTx(worker workers.IWorker) {
 					Height:             txLog.Height,
 					Status:             txLog.SwapStatus,
 					CreateTime:         time.Now().Unix(),
-					TxHash:             txLog.TxHash,
+				}
+				if txLog.TxType == storage.TxTypeDeposit {
+					newSwap.TxHash = txLog.TxHash
 				}
 				newSwaps = append(newSwaps, newSwap)
 				txHashes = append(txHashes, txLog.TxHash)
