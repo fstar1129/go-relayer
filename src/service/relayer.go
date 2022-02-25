@@ -26,7 +26,8 @@ type RelayerSRV struct {
 }
 
 // CreateNewRelayerSRV ...
-func CreateNewRelayerSRV(logger *logrus.Logger, gormDB *gorm.DB, laConfig, posCfg *models.WorkerConfig, bscCfg *models.WorkerConfig) *RelayerSRV {
+func CreateNewRelayerSRV(logger *logrus.Logger, gormDB *gorm.DB, laConfig, posCfg *models.WorkerConfig,
+	bscCfg, ethCfg *models.WorkerConfig, resourceIDs []*storage.ResourceId) *RelayerSRV {
 	// init database
 	db, err := storage.InitStorage(gormDB)
 	if err != nil {
@@ -37,12 +38,13 @@ func CreateNewRelayerSRV(logger *logrus.Logger, gormDB *gorm.DB, laConfig, posCf
 	inst := RelayerSRV{
 		logger:   logger,
 		storage:  db,
-		laWorker: eth.NewErc20Worker(logger, laConfig),
+		laWorker: eth.NewErc20Worker(logger, laConfig, db),
 		Workers:  make(map[string]workers.IWorker),
 	}
 	// create erc20 worker
-	inst.Workers[storage.POSChain] = eth.NewErc20Worker(logger, posCfg)
-	inst.Workers[storage.BSCChain] = eth.NewErc20Worker(logger, bscCfg)
+	inst.Workers[storage.POSChain] = eth.NewErc20Worker(logger, posCfg, db)
+	inst.Workers[storage.BSCChain] = eth.NewErc20Worker(logger, bscCfg, db)
+	inst.Workers[storage.EthChain] = eth.NewErc20Worker(logger, ethCfg, db)
 	// // create la worker
 	inst.Workers[storage.LaChain] = inst.laWorker
 
@@ -52,7 +54,7 @@ func CreateNewRelayerSRV(logger *logrus.Logger, gormDB *gorm.DB, laConfig, posCf
 		return nil
 	}
 	inst.Watcher = watcher.CreateNewWatcherSRV(logger, db, inst.Workers)
-
+	db.SaveResourceIDs(resourceIDs)
 	return &inst
 }
 
@@ -61,6 +63,9 @@ func (r *RelayerSRV) Run() {
 	// start watcher
 	r.Watcher.Run()
 	go r.emitChainSendClaim()
+	go r.emitChainSendPass()
+	go r.emitChainSendSpend()
+	go r.emitChainSendExpire()
 	// run Worker workers
 	for _, worker := range r.Workers {
 		go r.ConfirmWorkerTx(worker)
@@ -68,25 +73,22 @@ func (r *RelayerSRV) Run() {
 	}
 }
 
-// func (r *RelayerSRV) GetSwapStatus(req *models.SwapStatus) (storage.SwapStatus, error) {
-// 	swapType := storage.SwapTypeUnbind
-// 	if req.Chain == storage.LaChain {
-// 		swapType = storage.SwapTypeBind
-// 	}
+func (r *RelayerSRV) GetSwapStatus(req *models.SwapStatus) (storage.SwapStatus, error) {
+	swapType := storage.SwapTypeUnbind
+	if req.Chain == storage.LaChain {
+		swapType = storage.SwapTypeBind
+	}
+	swap, err := r.storage.GetSwapByStatus(swapType, req.Sender, req.Receipt, req.Amount, req.Nonce)
+	if err != nil {
+		r.logger.Errorf("GetSwapByStatus type %s, req: %v, failed with error: %v", swapType, req, err)
+		return "", err
+	}
+	if swap != nil {
+		return swap.Status, nil
+	}
 
-// 	// swap, err := r.storage.GetSwapByStatus(swapType, req.Sender, req.Receipt, req.Amount)
-// 	// if err != nil {
-// 		// log
-// 		// r.logger.Errorln(err)
-// 		// return "", err
-// 	}
-
-// 	if swap != nil {
-// 		return swap.Status, nil
-// 	}
-
-// 	return "", nil
-// }
+	return "", nil
+}
 
 // Status ...
 func (r *RelayerSRV) StatusOfWorkers() (map[string]*models.WorkerStatus, error) {
@@ -124,10 +126,10 @@ func (r *RelayerSRV) ConfirmWorkerTx(worker workers.IWorker) {
 
 		// CREATE NEW SWAPS
 		for _, txLog := range txLogs {
-			if txLog.TxType == storage.TxTypeDeposit {
-				swapType := storage.SwapTypeBind
-				if txLog.Chain == storage.LaChain {
-					swapType = storage.SwapTypeUnbind
+			if txLog.Status == storage.TxStatusInit {
+				swapType := storage.SwapTypeUnbind
+				if txLog.DestinationChainID == r.laWorker.GetDestinationID() {
+					swapType = storage.SwapTypeBind
 				}
 				// reject swap request if receiver addr and worker chain addr both are r addr
 				// if worker.IsSameAddress(txLog.ReceiverAddr, worker.GetWorkerAddress()) &&
@@ -148,15 +150,16 @@ func (r *RelayerSRV) ConfirmWorkerTx(worker workers.IWorker) {
 					DestinationChainID: txLog.DestinationChainID,
 					OriginChainID:      txLog.OriginСhainID,
 					Height:             txLog.Height,
-					Status:             storage.SwapStatusDepositConfirmed,
+					Status:             txLog.SwapStatus,
 					CreateTime:         time.Now().Unix(),
 				}
 				newSwaps = append(newSwaps, newSwap)
+				txHashes = append(txHashes, txLog.TxHash)
+				r.logger.Infof("compensate new swap tx coplete, tx %v, logs: %v, swaps: %v", txHashes, txLogs, newSwaps)
 			}
-			txHashes = append(txHashes, txLog.TxHash)
 		}
 
-		//
+		//stores new txLogs in db
 		if err := r.storage.ConfirmWorkerTx(worker.GetChainName(), txLogs, txHashes, newSwaps); err != nil {
 			r.logger.Errorf("compensate new swap tx error, err=%s", err)
 		}

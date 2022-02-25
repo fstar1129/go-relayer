@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
 
 	"github.com/spf13/viper"
 )
@@ -13,9 +14,10 @@ import (
 // Config ...
 type Config interface {
 	ReadServiceConfig() string
-	ReadWorkersConfig() (*models.WorkerConfig, *models.WorkerConfig)
+	ReadWorkersConfig() (*models.WorkerConfig, *models.WorkerConfig, *models.WorkerConfig)
 	ReadLachainConfig() *models.WorkerConfig
 	ReadDBConfig() *models.StorageConfig
+	ReadResourceIDs() []*storage.ResourceId
 	GetString(key string) string
 	GetStringMap(key string) map[string]string
 	GetInt64(key string) int64
@@ -29,18 +31,18 @@ type viperConfig struct {
 
 func (v *viperConfig) Init() {
 	viper.AutomaticEnv()
-	viper.AddConfigPath(os.Getenv("FILE_PATH"))
 	// viper.AddConfigPath("../config-files/")
+	viper.AddConfigPath(os.Getenv("FILE_PATH"))
 	replacer := strings.NewReplacer(`.`, `_`)
 	viper.SetEnvKeyReplacer(replacer)
 	viper.SetConfigType(`json`)
+	// viper.SetConfigName("config2.json")
 	viper.SetConfigName(os.Getenv("FILE_NAME"))
-	// viper.SetConfigName("config1.json")
 	if _, err := os.Stat("./config.json.local"); !os.IsNotExist(err) {
 		viper.SetConfigFile(`config.json.local`)
 	}
 	if err := viper.ReadInConfig(); err != nil {
-		fmt.Println(err)
+		fmt.Printf("read config error: %s", err)
 	}
 }
 func (v *viperConfig) GetString(key string) string {

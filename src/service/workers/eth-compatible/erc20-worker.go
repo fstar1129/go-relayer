@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -27,17 +28,20 @@ import (
 
 // Erc20Worker ...
 type Erc20Worker struct {
-	provider         string
-	chainName        string
-	chainID          int64
-	logger           *logrus.Entry // logger
-	config           *models.WorkerConfig
-	client           *ethclient.Client
-	swapContractAddr common.Address
+	provider           string
+	chainName          string
+	chainID            int64
+	destinationChainID string
+	logger             *logrus.Entry // logger
+	config             *models.WorkerConfig
+	client             *ethclient.Client
+	swapContractAddr   common.Address
+	proxyContractAddr  common.Address
+	db                 *storage.DataBase
 }
 
 // NewErc20Worker ...
-func NewErc20Worker(logger *logrus.Logger, cfg *models.WorkerConfig) *Erc20Worker {
+func NewErc20Worker(logger *logrus.Logger, cfg *models.WorkerConfig, db *storage.DataBase) *Erc20Worker {
 	client, err := ethclient.Dial(cfg.Provider)
 	if err != nil {
 		panic("new eth client error")
@@ -65,13 +69,16 @@ func NewErc20Worker(logger *logrus.Logger, cfg *models.WorkerConfig) *Erc20Worke
 
 	// init token addresses
 	return &Erc20Worker{
-		chainName:        cfg.ChainName,
-		chainID:          cfg.ChainID,
-		logger:           logger.WithField("worker", cfg.ChainName),
-		provider:         cfg.Provider,
-		config:           cfg,
-		client:           client,
-		swapContractAddr: cfg.ContractAddr,
+		chainName:          cfg.ChainName,
+		chainID:            cfg.ChainID,
+		destinationChainID: cfg.DestinationChainID,
+		logger:             logger.WithField("worker", cfg.ChainName),
+		provider:           cfg.Provider,
+		config:             cfg,
+		client:             client,
+		swapContractAddr:   cfg.ContractAddr,
+		proxyContractAddr:  cfg.ProxyContractAddr,
+		db:                 db,
 	}
 }
 
@@ -83,6 +90,10 @@ func (w *Erc20Worker) GetChainName() string {
 // GetChainID returns chain id
 func (w *Erc20Worker) GetChainID() int64 {
 	return w.chainID
+}
+
+func (w *Erc20Worker) GetDestinationID() string {
+	return w.destinationChainID
 }
 
 // // GetChain returns chain name
@@ -121,13 +132,11 @@ func (w *Erc20Worker) GetStatus() (*models.WorkerStatus, error) {
 func (w *Erc20Worker) GetBlockAndTxs(height int64) (*models.BlockAndTxLogs, error) {
 	var head *Header
 	rpcClient := jsonrpc.NewClient(w.provider)
-
-	resp, err := rpcClient.Call("eth_getBlockByNumber", fmt.Sprintf("0x%x", height), false)
+	resp, err := rpcClient.Call("eth_getBlockByNumber", "latest", false)
 	if err != nil {
 		w.logger.Errorln("while call eth_getBlockByNumber, err = ", err)
 		return nil, err
 	}
-
 	if err := resp.GetObject(&head); err != nil {
 		w.logger.Errorln("while GetObject, err = ", err)
 		return nil, err
@@ -137,14 +146,18 @@ func (w *Erc20Worker) GetBlockAndTxs(height int64) (*models.BlockAndTxLogs, erro
 		return nil, fmt.Errorf("not found")
 	}
 
-	logs, err := w.getLogs(head.Hash)
+	if height >= int64(head.Number) {
+		return nil, fmt.Errorf("not found")
+	}
+
+	logs, err := w.getLogs(height, int64(head.Number))
 	if err != nil {
-		w.logger.Errorf("while getEvents(blockhash = %s), err = %v", head.Hash, err)
+		w.logger.Errorf("while getEvents(block number from %d to %d), err = %v", height, head.Number, err)
 		return nil, err
 	}
 
 	return &models.BlockAndTxLogs{
-		Height:          height,
+		Height:          int64(head.Number),
 		BlockHash:       head.Hash.String(),
 		ParentBlockHash: head.ParentHash.Hex(),
 		BlockTime:       int64(head.Time),
@@ -158,12 +171,19 @@ func (w *Erc20Worker) GetFetchInterval() time.Duration {
 }
 
 // getLogs ...
-func (w *Erc20Worker) getLogs(blockHash common.Hash) ([]*storage.TxLog, error) {
+func (w *Erc20Worker) getLogs(curHeight, nextHeight int64) ([]*storage.TxLog, error) {
+	if curHeight == 0 {
+		curHeight = nextHeight - 1
+	}
 	logs, err := w.client.FilterLogs(context.Background(), ethereum.FilterQuery{
-		BlockHash: &blockHash,
+		// BlockHash: &blockHash,
+		FromBlock: big.NewInt(curHeight + 1),
+		ToBlock:   big.NewInt(nextHeight),
 		Addresses: []common.Address{w.swapContractAddr},
+		// Topics:    [][]common.Hash{},
 	})
 	if err != nil {
+		w.logger.WithFields(logrus.Fields{"function": "GetLogs()"}).Errorf("get event log error, err=%s", err)
 		return nil, err
 	}
 
@@ -181,7 +201,6 @@ func (w *Erc20Worker) getLogs(blockHash common.Hash) ([]*storage.TxLog, error) {
 
 		txLog := event.ToTxLog()
 
-		// if txLog.TxType == storage.TxTypeDeposit {
 		// 	w.logger.Infof("Deposited\ndestination chain ID: 0x%s\nresource ID: 0x%s\ndeposit nonce: %d\nrecipient address: %s\namount address: %s\ntoken address: %s\n",
 		// 		txLog.DestinationChainID, txLog.ResourceID, txLog.DepositNonce, txLog.SenderAddr, txLog.ReceiverAddr, txLog.OutAmount, txLog.InTokenAddr)
 		// } else if txLog.TxType == storage.TxTypeClaim {
@@ -196,7 +215,6 @@ func (w *Erc20Worker) getLogs(blockHash common.Hash) ([]*storage.TxLog, error) {
 
 		models = append(models, txLog)
 	}
-
 	return models, nil
 }
 
@@ -213,10 +231,11 @@ func (w *Erc20Worker) GetHeight() (int64, error) {
 func (w *Erc20Worker) Vote(depositNonce uint64, originchainID [8]byte, destinationChainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error) {
 	auth, err := w.getTransactor()
 	if err != nil {
+		println("cannot get transactor")
 		return "", err
 	}
 
-	instance, err := labr.NewLabr(w.swapContractAddr, w.client)
+	instance, err := labr.NewLabr(w.proxyContractAddr, w.client)
 	if err != nil {
 		return "", err
 	}
@@ -263,24 +282,27 @@ func (w *Erc20Worker) Claimable(swapID common.Hash) (bool, error) {
 }
 
 func (w *Erc20Worker) GetTxCountLatest() (uint64, error) {
-	var result uint64
+	var result hexutil.Uint64
 	rpcClient := jsonrpc.NewClient(w.provider)
 
-	resp, err := rpcClient.Call("eth_getTransactionCount", w.config.WorkerAddr.Hex(), "latest")
+	resp, err := rpcClient.Call("eth_getTransactionCount", w.config.WorkerAddr.Hex(), "pending")
 	if err != nil {
 		return 0, err
 	}
-
 	if err := resp.GetObject(&result); err != nil {
 		return 0, err
 	}
-
-	return result, nil
+	return uint64(result), nil
 }
 
 // GetTransactor ...
 func (w *Erc20Worker) getTransactor() (auth *bind.TransactOpts, err error) {
 	privateKey, err := utils.GetPrivateKey(w.config)
+	if err != nil {
+		return nil, err
+	}
+
+	auth, err = bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(w.chainID))
 	if err != nil {
 		return nil, err
 	}
@@ -299,10 +321,6 @@ func (w *Erc20Worker) getTransactor() (auth *bind.TransactOpts, err error) {
 		}
 	}
 
-	auth, err = bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(w.chainID))
-	if err != nil {
-		return nil, err
-	}
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)                // in wei
 	auth.GasLimit = uint64(w.config.GasLimit) // in units

@@ -13,7 +13,7 @@ import (
 func (r *RelayerSRV) emitChainSendClaim() {
 	for {
 		swaps := r.storage.GetSwapsByTypeAndStatuses(
-			[]storage.SwapStatus{storage.SwapStatusDepositConfirmed, storage.SwapStatusClaimSent})
+			[]storage.SwapStatus{storage.SwapStatusDepositConfirmed, storage.SwapStatusClaimSentFailed})
 
 		for _, swap := range swaps {
 			if swap.Status == storage.SwapStatusDepositConfirmed {
@@ -23,7 +23,7 @@ func (r *RelayerSRV) emitChainSendClaim() {
 				}
 			} else {
 				r.handleTxSent(r.laWorker.GetChainName(), swap, storage.TxTypeDeposit,
-					storage.SwapStatusClaimConfirmed, storage.SwapStatusClaimSentFailed)
+					storage.SwapStatusClaimConfirmed, storage.SwapStatusDepositConfirmed)
 			}
 		}
 
@@ -40,11 +40,21 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 		CreateTime: time.Now().Unix(),
 	}
 
-	r.logger.Infof("claim parameters: depositNonce(%d) | sender(%s) | outAmount(%s) | resourceID(%s)\n",
-		swap.DepositNonce, swap.SenderAddr, swap.OutAmount, swap.ResourceID)
+	tetherRID := r.storage.FetchResourceIDByName("tether").ID
+	bscDestID := r.Workers[storage.BSCChain].GetDestinationID()
+	var amount string
+	if swap.OriginChainID == bscDestID && swap.ResourceID == tetherRID {
+		amount = utils.Convertto6Decimals(swap.OutAmount)
+	} else if swap.DestinationChainID == bscDestID && swap.ResourceID == tetherRID {
+		amount = utils.Convertto18Decimals(swap.OutAmount)
+	} else {
+		amount = swap.OutAmount
+	}
+	r.logger.Infof("claim parameters: depositNonce(%d) | sender(%s) | outAmount(%d) | resourceID(%s)\n",
+		swap.DepositNonce, swap.SenderAddr, amount, swap.ResourceID)
 
 	txHash, err := worker.Vote(swap.DepositNonce, utils.StringToBytes8(swap.OriginChainID), utils.StringToBytes8(swap.DestinationChainID),
-		utils.StringToBytes32(swap.ResourceID), swap.ReceiverAddr, swap.OutAmount)
+		utils.StringToBytes32(swap.ResourceID), swap.ReceiverAddr, amount)
 	if err != nil {
 		txSent.ErrMsg = err.Error()
 		txSent.Status = storage.TxSentStatusFailed

@@ -13,10 +13,9 @@ type BlockLog struct {
 
 // TxLog ...
 type TxLog struct {
-	ID    int64
-	Chain string `gorm:"type:TEXT"`
+	SwapID string `gorm:"primaryKey"`
+	Chain  string `gorm:"type:TEXT"`
 	// swap id should be hex encoded bytes without '0x' prefix
-	SwapID       string `gorm:"type:TEXT"`
 	TxType       TxType `gorm:"type:tx_types"`
 	TxHash       string `gorm:"type:TEXT"`
 	InTokenAddr  string `gorm:"type:TEXT"`
@@ -24,16 +23,16 @@ type TxLog struct {
 	// sender address should be encoded by each relayer
 	SenderAddr string `gorm:"type:TEXT"`
 	// receiver address should be encoded by each relayer
-	ReceiverAddr       string `gorm:"type:TEXT"`
-	SenderWorkerChain  string `gorm:"type:TEXT"`
-	WorkerChainAddr    string `gorm:"type:TEXT"`
-	InAmount           string `gorm:"type:TEXT"`
-	OutAmount          string `gorm:"type:TEXT"`
-	OriginСhainID      string `gorm:"type:TEXT"`
-	DestinationChainID string `gorm:"type:TEXT"`
-	DepositNonce       uint64 `gorm:"type:BIGINT"`
-	ResourceID         string `gorm:"type:TEXT"`
-	SwapStatus         uint8
+	ReceiverAddr       string      `gorm:"type:TEXT"`
+	SenderWorkerChain  string      `gorm:"type:TEXT"`
+	WorkerChainAddr    string      `gorm:"type:TEXT"`
+	InAmount           string      `gorm:"type:TEXT"`
+	OutAmount          string      `gorm:"type:TEXT"`
+	OriginСhainID      string      `gorm:"type:TEXT"`
+	DestinationChainID string      `gorm:"type:TEXT"`
+	DepositNonce       uint64      `gorm:"type:BIGINT"`
+	ResourceID         string      `gorm:"type:TEXT"`
+	SwapStatus         SwapStatus  `gorm:"type:TEXT"`
 	ExpireHeight       int64       `gorm:"type:BIGINT"`
 	Timestamp          int64       `gorm:"type:BIGINT"`
 	BlockHash          string      `gorm:"type:TEXT"`
@@ -46,11 +45,10 @@ type TxLog struct {
 
 // Swap ...
 type Swap struct {
-	ID                 int64
+	SwapID             string `gorm:"primaryKey"`
 	Type               SwapType
 	DestinationChainID string
 	OriginChainID      string
-	SwapID             string
 	SenderAddr         string
 	ReceiverAddr       string
 	//	WorkerChainAddr   string
@@ -81,4 +79,9 @@ type TxSent struct {
 	Status     TxStatus `json:"status" gorm:"type:tx_statuses"`
 	CreateTime int64    `json:"create_time" gorm:"type:BIGINT"`
 	UpdateTime int64    `json:"update_time" gorm:"type:BIGINT"`
+}
+
+type ResourceId struct {
+	Name string `gorm:"primaryKey"`
+	ID   string `gorm:"type:TEXT"`
 }

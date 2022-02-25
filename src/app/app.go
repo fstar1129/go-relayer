@@ -7,6 +7,7 @@ import (
 
 	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
 	rlr "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service"
+	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -24,13 +25,13 @@ type App struct {
 
 // NewApp is initializes the app
 func NewApp(logger *logrus.Logger, addr string, db *gorm.DB,
-	laCfg, posCfg *models.WorkerConfig, bscCfg *models.WorkerConfig) *App {
+	laCfg, posCfg, bscCfg, ethCfg *models.WorkerConfig, resourceIDs []*storage.ResourceId) *App {
 	// create new app
 	inst := &App{
 		logger:  logger,
 		router:  mux.NewRouter(),
 		server:  &http.Server{Addr: addr},
-		relayer: rlr.CreateNewRelayerSRV(logger, db, laCfg, posCfg, bscCfg),
+		relayer: rlr.CreateNewRelayerSRV(logger, db, laCfg, posCfg, bscCfg, ethCfg, resourceIDs),
 	}
 	// set router
 	inst.router = mux.NewRouter()
@@ -55,7 +56,7 @@ func (a *App) Get(path string, f func(w http.ResponseWriter, r *http.Request)) {
 func (a *App) setRouters() {
 	a.Get("/", a.Endpoints)
 	a.Get("/status", a.StatusHandler)
-	// a.Get("/status/{destination_chain}/{sender}/{receipt}/{amount}", a.SwapStatusHandler)
+	a.Get("/status/{destination_chain}/{sender}/{receipt}/{amount}/{deposit_nonce}", a.SwapStatusHandler)
 	// a.Get("/resend_tx/{id}", a.ResendTxHandler)
 	// a.Get("/set_mode/{mode}", a.SetModeHandler)
 }

@@ -73,7 +73,19 @@ func BytesToBytes8(b []byte) [8]byte {
 	return byteArr
 }
 
-func CalcutateSwapID(dataHash, nonce string) string {
+func CalcutateSwapID(originChainID, destChainID, nonce string) string {
 
-	return hexutil.Encode(crypto.Keccak256([]byte(dataHash))) + nonce
+	return hexutil.Encode(crypto.Keccak256([]byte(originChainID), []byte(destChainID))) + nonce
+}
+
+func Convertto6Decimals(amount string) string {
+	value, _ := new(big.Int).SetString(amount, 10)
+	ret := big.NewInt(0).Div(value, big.NewInt(1000000000000))
+	return ret.Text(10)
+}
+
+func Convertto18Decimals(amount string) string {
+	value, _ := new(big.Int).SetString(amount, 10)
+	ret := big.NewInt(0).Mul(big.NewInt(1000000000000), value)
+	return ret.Text(10)
 }

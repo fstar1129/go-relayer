@@ -23,18 +23,27 @@ func (d *DataBase) GetSwapsByTypeAndStatuses(statuses []SwapStatus) []*Swap {
 	return swaps
 }
 
-// GetSwapByStatus ...
-// func (d *DataBase) GetSwapByStatus(swapType SwapType, sender, receipt string, amount string) (*Swap, error) {
-// 	swap := &Swap{}
-// 	if err := d.db.Where("type = ? and sender_addr = ? and receiver_addr = ? and out_amount = ? and status in (?)",
-// 		swapType, sender, receipt, amount,
-// 		[]SwapStatus{SwapStatusClaimSent, SwapStatusClaimConfirmed, SwapStatusClaimSentFailed, SwapStatusDepositConfirmed, SwapStatusDepositFailed, SwapStatusRejected}).
-// 		Find(&swap).Error; err != nil {
-// 		return nil, err
-// 	}
+//GetSwapBySwapID
+func (d *DataBase) GetSwapBySwapID(swapID string) []*Swap {
+	swaps := make([]*Swap, 0)
+	if err := d.db.Where("swap_id = ?", swapID).Find((&swaps)).Error; err != nil {
+		return nil
+	}
+	return swaps
+}
 
-// 	return swap, nil
-// }
+// GetSwapByStatus ...
+func (d *DataBase) GetSwapByStatus(swapType SwapType, sender, receipt string, amount string, nonce string) (*Swap, error) {
+	swap := &Swap{}
+	if err := d.db.Where("type = ? and sender_addr = ? and receiver_addr = ? and out_amount = ? and deposit_nonce = ? and status in (?)",
+		swapType, sender, receipt, amount, nonce,
+		[]SwapStatus{SwapStatusDepositConfirmed, SwapStatusClaimSent, SwapStatusClaimConfirmed, SwapStatusClaimSentFailed, SwapStatusDepositFailed, SwapStatusPassedConfirmed, SwapStatusPassedSent, SwapStatusSpendSent, SwapStatusSpendConfirmed, SwapStatusRejected}).
+		Find(&swap).Error; err != nil {
+		return nil, err
+	}
+
+	return swap, nil
+}
 
 // UpdateSwapStatus ...
 func (d *DataBase) UpdateSwapStatus(swap *Swap, status SwapStatus, rOutAmount string) {
@@ -42,11 +51,9 @@ func (d *DataBase) UpdateSwapStatus(swap *Swap, status SwapStatus, rOutAmount st
 		"status":      status,
 		"update_time": time.Now().Unix(),
 	}
-
 	if rOutAmount != "" {
 		toUpdate["r_out_amount"] = rOutAmount
 	}
-
 	d.db.Model(swap).Update(toUpdate)
 }
 

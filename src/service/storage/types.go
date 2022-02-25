@@ -6,6 +6,8 @@ var (
 	POSChain string = "POS"
 	// BSCChain - Binance chain
 	BSCChain string = "BSC"
+	//EthChain - ropsten testnet
+	EthChain string = "ETH"
 	// BtcChain - Bitcoin chain
 	BtcChain string = "BTC"
 )
@@ -38,6 +40,7 @@ const (
 	TxTypeDeposit TxType = "DEPOSIT"
 	TxTypePassed  TxType = "PASSED"
 	TxTypeSpend   TxType = "SPEND"
+	TxTypeExpired TxType = "EXPIRED"
 )
 
 type SwapType string
@@ -59,8 +62,11 @@ const (
 	SwapStatusDepositConfirmed SwapStatus = "DEPOSIT_CONFIRMED"
 	SwapStatusDepositFailed    SwapStatus = "DEPOSIT_FAILED"
 	SwapStatusPassedConfirmed  SwapStatus = "PASSED_CONFIRMED"
+	SwapStatusPassedSent       SwapStatus = "PASSED_SENT"
 	SwapStatusSpendSent        SwapStatus = "SPEND_SENT"
 	SwapStatusSpendConfirmed   SwapStatus = "SPEND_CONFIRMED"
+	SwapStatusExpiredConfirmed SwapStatus = "EXPIRED_CONFIRMED"
+	SwapStatusExpiredSent      SwapStatus = "EXPIRED_SENT"
 
 	SwapStatusRejected SwapStatus = "REJECTED"
 )

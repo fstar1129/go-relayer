@@ -13,6 +13,7 @@ type IWorker interface {
 	GetChainName() string
 	// GetChainID returns unique id of the chain(like 26, 27, 80001 and etc)
 	GetChainID() int64
+	GetDestinationID() string
 	// GetWokrerAddress returns worker address
 	GetWorkerAddress() string
 	// GetStartHeight returns blockchain start height for watcher

@@ -2,6 +2,7 @@ package eth
 
 import (
 	"bytes"
+	"fmt"
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -70,13 +71,14 @@ func (ev DepositEvent) ToTxLog() *storage.TxLog {
 		TxType:             storage.TxTypeDeposit,
 		DestinationChainID: common.Bytes2Hex(ev.DestinationChainID[:]),
 		OriginСhainID:      common.Bytes2Hex(ev.OriginChainID[:]),
-		SwapID:             utils.CalcutateSwapID(string(ev.DataHash[:]), string(ev.DepositNonce)),
+		SwapID:             utils.CalcutateSwapID(string(ev.OriginChainID[:]), string(ev.DestinationChainID[:]), fmt.Sprint(ev.DepositNonce)),
 		ResourceID:         common.Bytes2Hex(ev.ResourceID[:]),
 		DepositNonce:       ev.DepositNonce,
 		SenderAddr:         ev.Depositor.Hex(),
 		ReceiverAddr:       ev.RecipientAddress.Hex(),
 		InTokenAddr:        ev.TokenAddress.Hex(),
 		OutAmount:          ev.Amount.String(),
+		SwapStatus:         storage.SwapStatusDepositConfirmed,
 	}
 }
 
@@ -85,17 +87,23 @@ func (ev ProposalEvent) ToTxLog() *storage.TxLog {
 		TxType:             storage.TxTypeVote,
 		DestinationChainID: common.Bytes2Hex(ev.DestinationChainID[:]),
 		OriginСhainID:      common.Bytes2Hex(ev.OriginChainID[:]),
-		SwapID:             utils.CalcutateSwapID(string(ev.DataHash[:]), string(ev.DepositNonce)),
+		SwapID:             utils.CalcutateSwapID(string(ev.OriginChainID[:]), string(ev.DestinationChainID[:]), fmt.Sprint(ev.DepositNonce)),
 		ResourceID:         common.Bytes2Hex(ev.ResourceID[:]),
 		DepositNonce:       ev.DepositNonce,
 		ReceiverAddr:       ev.RecipientAddress.Hex(),
 		OutAmount:          ev.Amount.String(),
+		SwapStatus:         storage.SwapStatusClaimSent,
 	}
 
 	if ev.Status == uint8(2) {
 		txlog.TxType = storage.TxTypePassed
+		txlog.SwapStatus = storage.SwapStatusPassedConfirmed
 	} else if ev.Status == uint8(3) {
 		txlog.TxType = storage.TxTypeSpend
+		txlog.SwapStatus = storage.SwapStatusSpendConfirmed
+	} else if ev.Status == uint8(4) {
+		txlog.TxType = storage.TxTypeExpired
+		txlog.SwapStatus = storage.SwapStatusExpiredConfirmed
 	}
 
 	return txlog
@@ -124,4 +132,5 @@ type Header struct {
 	Hash       common.Hash    `json:"hash"`
 	ParentHash common.Hash    `json:"parentHash"       gencodec:"required"`
 	Time       hexutil.Uint64 `json:"timestamp"        gencodec:"required"`
+	Number     hexutil.Uint64 `json:"number"					 gencodec:"required"`
 }

@@ -52,5 +52,10 @@ func InitStorage(db *gorm.DB) (*DataBase, error) {
 		return nil, err
 	}
 
+	// migrate table "resource_ids"
+	if err := db.AutoMigrate(ResourceId{}).Error; err != nil {
+		return nil, err
+	}
+
 	return &DataBase{db: db}, nil
 }
