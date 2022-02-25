@@ -73,8 +73,13 @@ func (w *WatcherSRV) collector(worker workers.IWorker, threshold time.Duration, 
 }
 
 func (w *WatcherSRV) getBlock(worker workers.IWorker, curHeight int64, curBlockHash string) error {
+	retry := 0
 	blockAndTxLogs, err := worker.GetBlockAndTxs(curHeight)
-	if err != nil {
+
+	if err != nil && retry == 0 {
+		retry = 1
+		blockAndTxLogs, err = worker.GetBlockAndTxs(curHeight)
+	} else {
 		return fmt.Errorf("get %s block info error, height=%d, err=%s", worker.GetChainName(), curHeight, err.Error())
 	}
 
