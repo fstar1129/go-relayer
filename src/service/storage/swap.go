@@ -33,10 +33,10 @@ func (d *DataBase) GetSwapBySwapID(swapID string) []*Swap {
 }
 
 // GetSwapByStatus ...
-func (d *DataBase) GetSwapByStatus(swapType SwapType, sender, receipt string, amount string) (*Swap, error) {
+func (d *DataBase) GetSwapByStatus(swapType SwapType, sender, receipt string, amount string, nonce string) (*Swap, error) {
 	swap := &Swap{}
-	if err := d.db.Where("type = ? and sender_addr = ? and receiver_addr = ? and out_amount = ? and status in (?)",
-		swapType, sender, receipt, amount,
+	if err := d.db.Where("type = ? and sender_addr = ? and receiver_addr = ? and out_amount = ? and deposit_nonce = ? and status in (?)",
+		swapType, sender, receipt, amount, nonce,
 		[]SwapStatus{SwapStatusDepositConfirmed, SwapStatusClaimSent, SwapStatusClaimConfirmed, SwapStatusClaimSentFailed, SwapStatusDepositFailed, SwapStatusPassedConfirmed, SwapStatusPassedSent, SwapStatusSpendSent, SwapStatusSpendConfirmed, SwapStatusRejected}).
 		Find(&swap).Error; err != nil {
 		return nil, err

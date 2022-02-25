@@ -75,6 +75,7 @@ type SwapStatus struct {
 	Sender  string `json:"sender"`
 	Receipt string `json:"receipt"`
 	Amount  string `json:"amount"`
+	Nonce   string `json:"deposit_nonce"`
 }
 
 // StatusResponce ...

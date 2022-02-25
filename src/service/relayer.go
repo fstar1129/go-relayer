@@ -78,7 +78,7 @@ func (r *RelayerSRV) GetSwapStatus(req *models.SwapStatus) (storage.SwapStatus, 
 	if req.Chain == storage.LaChain {
 		swapType = storage.SwapTypeBind
 	}
-	swap, err := r.storage.GetSwapByStatus(swapType, req.Sender, req.Receipt, req.Amount)
+	swap, err := r.storage.GetSwapByStatus(swapType, req.Sender, req.Receipt, req.Amount, req.Nonce)
 	if err != nil {
 		r.logger.Errorf("GetSwapByStatus type %s, req: %v, failed with error: %v", swapType, req, err)
 		return "", err
