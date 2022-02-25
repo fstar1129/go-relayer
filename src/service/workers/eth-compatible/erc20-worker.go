@@ -177,7 +177,7 @@ func (w *Erc20Worker) getLogs(curHeight, nextHeight int64) ([]*storage.TxLog, er
 	}
 	logs, err := w.client.FilterLogs(context.Background(), ethereum.FilterQuery{
 		// BlockHash: &blockHash,
-		FromBlock: big.NewInt(curHeight),
+		FromBlock: big.NewInt(curHeight + 1),
 		ToBlock:   big.NewInt(nextHeight),
 		Addresses: []common.Address{w.swapContractAddr},
 		// Topics:    [][]common.Hash{},
