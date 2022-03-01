@@ -62,7 +62,7 @@ func CreateNewRelayerSRV(logger *logrus.Logger, gormDB *gorm.DB, laConfig, posCf
 func (r *RelayerSRV) Run() {
 	// start watcher
 	r.Watcher.Run()
-	go r.emitChainSendClaim()
+	// go r.emitChainSendClaim()
 	go r.emitChainSendPass()
 	go r.emitChainSendSpend()
 	go r.emitChainSendExpire()
@@ -78,7 +78,7 @@ func (r *RelayerSRV) GetSwapStatus(req *models.SwapStatus) (storage.SwapStatus, 
 	if req.Chain == storage.LaChain {
 		swapType = storage.SwapTypeBind
 	}
-	swap, err := r.storage.GetSwapByStatus(swapType, req.Sender, req.Receipt, req.Amount, req.Nonce)
+	swap, err := r.storage.GetSwapByStatus(swapType, req.Sender, req.Receipt, req.Amount, req.TxHash)
 	if err != nil {
 		r.logger.Errorf("GetSwapByStatus type %s, req: %v, failed with error: %v", swapType, req, err)
 		return "", err
@@ -152,6 +152,9 @@ func (r *RelayerSRV) ConfirmWorkerTx(worker workers.IWorker) {
 					Height:             txLog.Height,
 					Status:             txLog.SwapStatus,
 					CreateTime:         time.Now().Unix(),
+				}
+				if txLog.TxType == storage.TxTypeDeposit {
+					newSwap.TxHash = txLog.TxHash
 				}
 				newSwaps = append(newSwaps, newSwap)
 				txHashes = append(txHashes, txLog.TxHash)
