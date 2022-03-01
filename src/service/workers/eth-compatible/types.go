@@ -92,7 +92,7 @@ func (ev ProposalEvent) ToTxLog() *storage.TxLog {
 		DepositNonce:       ev.DepositNonce,
 		ReceiverAddr:       ev.RecipientAddress.Hex(),
 		OutAmount:          ev.Amount.String(),
-		SwapStatus:         storage.SwapStatusClaimSent,
+		SwapStatus:         storage.SwapStatusClaimConfirmed,
 	}
 
 	if ev.Status == uint8(2) {

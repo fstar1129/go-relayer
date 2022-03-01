@@ -156,7 +156,6 @@ func (r *RelayerSRV) ConfirmWorkerTx(worker workers.IWorker) {
 				if txLog.TxType == storage.TxTypeDeposit {
 					newSwap.TxHash = txLog.TxHash
 				}
-				println(newSwap.Status)
 				newSwaps = append(newSwaps, newSwap)
 				txHashes = append(txHashes, txLog.TxHash)
 				r.logger.Infof("compensate new swap tx coplete, tx %v, logs: %v, swaps: %v", txHashes, txLogs, newSwaps)
