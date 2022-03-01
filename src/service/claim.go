@@ -13,7 +13,7 @@ import (
 func (r *RelayerSRV) emitChainSendClaim() {
 	for {
 		swaps := r.storage.GetSwapsByTypeAndStatuses(
-			[]storage.SwapStatus{storage.SwapStatusDepositConfirmed, storage.SwapStatusClaimSentFailed})
+			[]storage.SwapStatus{storage.SwapStatusDepositConfirmed, storage.SwapStatusClaimConfirmed, storage.SwapStatusClaimSentFailed})
 
 		for _, swap := range swaps {
 			if swap.Status == storage.SwapStatusDepositConfirmed {
@@ -23,7 +23,7 @@ func (r *RelayerSRV) emitChainSendClaim() {
 				}
 			} else {
 				r.handleTxSent(r.laWorker.GetChainName(), swap, storage.TxTypeDeposit,
-					storage.SwapStatusClaimConfirmed, storage.SwapStatusDepositConfirmed)
+					storage.SwapStatusDepositConfirmed, storage.SwapStatusClaimConfirmed)
 			}
 		}
 
