@@ -62,7 +62,7 @@ func CreateNewRelayerSRV(logger *logrus.Logger, gormDB *gorm.DB, laConfig, posCf
 func (r *RelayerSRV) Run() {
 	// start watcher
 	r.Watcher.Run()
-	// go r.emitChainSendClaim()
+	go r.emitChainSendClaim()
 	go r.emitChainSendPass()
 	go r.emitChainSendSpend()
 	go r.emitChainSendExpire()
@@ -156,6 +156,7 @@ func (r *RelayerSRV) ConfirmWorkerTx(worker workers.IWorker) {
 				if txLog.TxType == storage.TxTypeDeposit {
 					newSwap.TxHash = txLog.TxHash
 				}
+				println(newSwap.Status)
 				newSwaps = append(newSwaps, newSwap)
 				txHashes = append(txHashes, txLog.TxHash)
 				r.logger.Infof("compensate new swap tx coplete, tx %v, logs: %v, swaps: %v", txHashes, txLogs, newSwaps)
