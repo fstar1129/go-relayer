@@ -47,14 +47,11 @@ func (d *DataBase) GetSwapByStatus(swapType SwapType, sender, receipt string, am
 
 // UpdateSwapStatus ...
 func (d *DataBase) UpdateSwapStatus(swap *Swap, status SwapStatus, rOutAmount string) {
-	toUpdate := map[string]interface{}{
-		"status":      status,
-		"update_time": time.Now().Unix(),
-	}
+	swap.Status = status
 	if rOutAmount != "" {
-		toUpdate["r_out_amount"] = rOutAmount
+		swap.OutAmount = rOutAmount
 	}
-	d.db.Model(swap).Update(toUpdate)
+	d.db.Model(Swap{}).Where("swap_id = ?", swap.SwapID).Update(swap)
 }
 
 // CompensateNewSwap ...
@@ -64,7 +61,6 @@ func (d *DataBase) CompensateNewSwap(tx *gorm.DB, chain string, newSwaps []*Swap
 		if err != nil {
 			continue
 		}
-
 		if len(txLogs) == 0 {
 			continue
 		}

@@ -67,6 +67,7 @@ type Swap struct {
 	//	SwapStatus uint8
 	CreateTime int64
 	UpdateTime int64
+	TxHash     string
 }
 
 // TxSent ...
