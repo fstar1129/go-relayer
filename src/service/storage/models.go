@@ -59,7 +59,6 @@ type Swap struct {
 	RelayerOutAmount string
 	DepositNonce     uint64
 	ResourceID       string
-	TxHash           string
 	// ExpireHeight     int64
 	Height int64
 	//	Timestamp  int64
