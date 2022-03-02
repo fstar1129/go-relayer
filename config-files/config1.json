@@ -1,0 +1,83 @@
+{
+  "name": "Relayer smart contract service",
+  "service": {
+    "host": "0.0.0.0",
+    "port": "8001"
+  },
+  "logger-level": "debug",
+  "workers": {
+    "LA": {
+      "chain_id": 25,
+      "provider": "https://rpc-mainnet.lachain.io",
+      "worker_addr": "0x762F91eb5E8947B604B64687E5889e83a6CE63ad",
+      "contract_addr": "0x5553d2d0b91CC636525545A91c2A16955569d712",
+      "proxy_contract": "0x5553d2d0b91CC636525545A91c2A16955569d712",
+      "private_key": "ee011c57e2d71da8c5c40ddcdbaa57c1b85a3decf63d4bbfffb212e5d8ddbd38",
+      "dest_id": "0000000000000019",
+      "gas_limit": 900000000,
+      "gas_price": 1,
+      "fetch_interval": 2,
+      "confirm_num": 1,
+      "start_block_height": 0
+    },
+    "POS": {
+      "chain_id": 137,
+      "provider": "https://polygon-mainnet.infura.io/v3/b8030a31a9c2463e97d8eb795d48a161",
+      "worker_addr": "0x762F91eb5E8947B604B64687E5889e83a6CE63ad",
+      "contract_addr": "0x58776462c924eA4293323fe69c0C9E7e2531c0a2",
+      "proxy_contract": "0x58776462c924eA4293323fe69c0C9E7e2531c0a2",
+      "private_key": "ee011c57e2d71da8c5c40ddcdbaa57c1b85a3decf63d4bbfffb212e5d8ddbd38",
+      "dest_id": "0000000000000089",
+      "gas_limit": 300000,
+      "gas_price": 20000000000,
+      "fetch_interval": 1,
+      "confirm_num": 1,
+      "start_block_height": 0
+    },
+    "BSC": {
+      "chain_id": 56,
+      "provider": "https://bsc-dataseed.binance.org/",
+      "worker_addr": "0x762F91eb5E8947B604B64687E5889e83a6CE63ad",
+      "contract_addr": "0x1D9d890aB3A9fe51c9EB4EebcD258C6659582345",
+      "proxy_contract": "0x1D9d890aB3A9fe51c9EB4EebcD258C6659582345",
+      "private_key": "ee011c57e2d71da8c5c40ddcdbaa57c1b85a3decf63d4bbfffb212e5d8ddbd38",
+      "dest_id": "0000000000000038",
+      "gas_limit": 300000,
+      "gas_price": 20000000000,
+      "fetch_interval": 2,
+      "confirm_num": 1,
+      "start_block_height": 0
+    },
+    "ETH": {
+      "chain_id": 1,
+      "provider": "https://mainnet.infura.io/v3/b8030a31a9c2463e97d8eb795d48a161",
+      "worker_addr": "0x762F91eb5E8947B604B64687E5889e83a6CE63ad",
+      "contract_addr": "0xf8A8c862fa1CC483c7330539869326da85211008",
+      "proxy_contract": "0xf8A8c862fa1CC483c7330539869326da85211008",
+      "private_key": "ee011c57e2d71da8c5c40ddcdbaa57c1b85a3decf63d4bbfffb212e5d8ddbd38",
+      "dest_id": "0000000000000003",
+      "gas_limit": 300000,
+      "gas_price": 20000000000,
+      "fetch_interval": 5,
+      "confirm_num": 0,
+      "start_block_height": 0
+    }
+  },
+  "storage": {
+    "url": "host=%s port=%d user=%s dbname=%s password=%s sslmode=%s",
+    "host": "0.0.0.0",
+    "port": 5432,
+    "ssl_mode": "disable",
+    "driver": "postgres",
+    "db_name": "db",
+    "user": "db",
+    "password": "postgres"
+  },
+  "resourceIDs": {
+    "tether": "000000000000001903eb5D26Aa73D863E9B53B880c9Aeff27A1d40d334095f77",
+    "matic-network": "000000000000000506F638421d1478FEE8c58025e778420cc87BFaBAb72bB02F",
+    "latoken": "5d9633ae98cc9ce999df86a069470e931d590bc7f34d0abca36bfeb5f0d9113a",
+    "binancecoin": "00000000000000e6d7DC99370DD5589E2ACF3544DABC96a5543EBE71e3FE2388",
+    "ethereum": "00000000000000c4f76f223a578FF90Cc9472D0C3E67679Ef7c824f2d81B4C0F"
+  }
+}
