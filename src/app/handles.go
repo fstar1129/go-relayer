@@ -18,7 +18,7 @@ func (a *App) Endpoints(w http.ResponseWriter, r *http.Request) {
 	}{
 		Endpoints: []string{
 			"/status",
-			"/status/{destination_chain}/{sender}/{receipt}/{amount}",
+			"/status/{destination_chain}/{sender}/{receipt}/{amount}/{tx_hash}",
 		},
 	}
 
@@ -32,9 +32,10 @@ func (a *App) SwapStatusHandler(w http.ResponseWriter, r *http.Request) {
 		Sender:  mux.Vars(r)["sender"],
 		Receipt: mux.Vars(r)["receipt"],
 		Amount:  mux.Vars(r)["amount"],
+		TxHash:  mux.Vars(r)["tx_hash"],
 	}
-	if msg.Chain == "" || msg.Sender == "" || msg.Receipt == "" || msg.Amount == "" {
-		a.logger.Errorf("Empty request(/status/{destination_chain}/{sender}/{receipt}/{amount})")
+	if msg.Chain == "" || msg.Sender == "" || msg.Receipt == "" || msg.Amount == "" || msg.TxHash == "" {
+		a.logger.Errorf("Empty request(/status/{destination_chain}/{sender}/{receipt}/{amount}/{tx_hash})")
 		common.ResponJSON(w, http.StatusInternalServerError, createNewError("empty request", ""))
 		return
 	}

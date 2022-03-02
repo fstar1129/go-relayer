@@ -52,7 +52,8 @@ type WorkerConfig struct {
 	SwapType                       string         `json:"swap_type"`
 	PrivateKey                     string         `json:"private_key"`
 	Provider                       string         `json:"provider"`
-	ContractAddr                   common.Address `json:"swap_contract_addr"`
+	ContractAddr                   common.Address `json:"contract_addr"`
+	ProxyContractAddr              common.Address `json:"proxy_contract"`
 	TokenContractAddr              common.Address `json:"token_contract_addr"`
 	WorkerAddr                     common.Address `json:"worker_addr"`
 	ColdWalletAddr                 common.Address `json:"cold_wallet_addr"`
@@ -74,6 +75,7 @@ type SwapStatus struct {
 	Sender  string `json:"sender"`
 	Receipt string `json:"receipt"`
 	Amount  string `json:"amount"`
+	TxHash  string `json:"tx_hash"`
 }
 
 // StatusResponce ...

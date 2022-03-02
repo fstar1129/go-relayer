@@ -33,10 +33,10 @@ func (d *DataBase) GetSwapBySwapID(swapID string) []*Swap {
 }
 
 // GetSwapByStatus ...
-func (d *DataBase) GetSwapByStatus(swapType SwapType, sender, receipt string, amount string) (*Swap, error) {
+func (d *DataBase) GetSwapByStatus(swapType SwapType, sender, receipt string, amount string, txHash string) (*Swap, error) {
 	swap := &Swap{}
-	if err := d.db.Where("type = ? and sender_addr = ? and receiver_addr = ? and out_amount = ? and status in (?)",
-		swapType, sender, receipt, amount,
+	if err := d.db.Where("type = ? and sender_addr = ? and receiver_addr = ? and out_amount = ? and tx_hash = ? and status in (?)",
+		swapType, sender, receipt, amount, txHash,
 		[]SwapStatus{SwapStatusDepositConfirmed, SwapStatusClaimSent, SwapStatusClaimConfirmed, SwapStatusClaimSentFailed, SwapStatusDepositFailed, SwapStatusPassedConfirmed, SwapStatusPassedSent, SwapStatusSpendSent, SwapStatusSpendConfirmed, SwapStatusRejected}).
 		Find(&swap).Error; err != nil {
 		return nil, err
@@ -47,14 +47,11 @@ func (d *DataBase) GetSwapByStatus(swapType SwapType, sender, receipt string, am
 
 // UpdateSwapStatus ...
 func (d *DataBase) UpdateSwapStatus(swap *Swap, status SwapStatus, rOutAmount string) {
-	toUpdate := map[string]interface{}{
-		"status":      status,
-		"update_time": time.Now().Unix(),
-	}
+	swap.Status = status
 	if rOutAmount != "" {
-		toUpdate["r_out_amount"] = rOutAmount
+		swap.OutAmount = rOutAmount
 	}
-	d.db.Model(swap).Update(toUpdate)
+	d.db.Model(Swap{}).Where("swap_id = ?", swap.SwapID).Update(swap)
 }
 
 // CompensateNewSwap ...
@@ -64,7 +61,6 @@ func (d *DataBase) CompensateNewSwap(tx *gorm.DB, chain string, newSwaps []*Swap
 		if err != nil {
 			continue
 		}
-
 		if len(txLogs) == 0 {
 			continue
 		}

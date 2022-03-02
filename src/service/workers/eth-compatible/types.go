@@ -78,7 +78,7 @@ func (ev DepositEvent) ToTxLog() *storage.TxLog {
 		ReceiverAddr:       ev.RecipientAddress.Hex(),
 		InTokenAddr:        ev.TokenAddress.Hex(),
 		OutAmount:          ev.Amount.String(),
-		SwapStatus:         storage.SwapStatusDepositConfirmed,
+		SwapStatus:         storage.SwapStatusDepositInit,
 	}
 }
 
@@ -92,7 +92,7 @@ func (ev ProposalEvent) ToTxLog() *storage.TxLog {
 		DepositNonce:       ev.DepositNonce,
 		ReceiverAddr:       ev.RecipientAddress.Hex(),
 		OutAmount:          ev.Amount.String(),
-		SwapStatus:         storage.SwapStatusClaimSent,
+		SwapStatus:         storage.SwapStatusClaimConfirmed,
 	}
 
 	if ev.Status == uint8(2) {
@@ -101,6 +101,9 @@ func (ev ProposalEvent) ToTxLog() *storage.TxLog {
 	} else if ev.Status == uint8(3) {
 		txlog.TxType = storage.TxTypeSpend
 		txlog.SwapStatus = storage.SwapStatusSpendConfirmed
+	} else if ev.Status == uint8(4) {
+		txlog.TxType = storage.TxTypeExpired
+		txlog.SwapStatus = storage.SwapStatusExpiredConfirmed
 	}
 
 	return txlog
@@ -129,4 +132,5 @@ type Header struct {
 	Hash       common.Hash    `json:"hash"`
 	ParentHash common.Hash    `json:"parentHash"       gencodec:"required"`
 	Time       hexutil.Uint64 `json:"timestamp"        gencodec:"required"`
+	Number     hexutil.Uint64 `json:"number"					 gencodec:"required"`
 }

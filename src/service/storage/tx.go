@@ -77,40 +77,42 @@ func (d *DataBase) ConfirmTx(tx *gorm.DB, txLog *TxLog) error {
 	case TxTypeDeposit:
 		// BIND tokens(mainchain(e.g. btc, eth) -> lachain)
 		if err := d.UpdateSwapStatusWhenConfirmTx(tx, SwapTypeBind, txLog, []SwapStatus{
-			SwapStatusDepositConfirmed, SwapStatusDepositFailed},
+			SwapStatusDepositInit, SwapStatusDepositFailed},
 			nil, SwapStatusDepositConfirmed); err != nil {
 			return err
 		}
 
 		// UNBIND tokens(lachain -> mainchain(e.g. btc, eth)
 		if err := d.UpdateSwapStatusWhenConfirmTx(tx, SwapTypeUnbind, txLog, []SwapStatus{
-			SwapStatusDepositConfirmed, SwapStatusDepositFailed},
+			SwapStatusDepositInit, SwapStatusDepositFailed},
 			nil, SwapStatusDepositConfirmed); err != nil {
 			return err
 		}
 	case TxTypeVote:
 		// BIND tokens(mainchain(e.g. btc, eth) -> lachain)
 		if err := d.UpdateSwapStatusWhenConfirmTx(tx, SwapTypeBind, txLog, []SwapStatus{
-			SwapStatusClaimSent}, nil, SwapStatusClaimConfirmed); err != nil {
+			SwapStatusClaimSent}, []SwapStatus{
+			SwapStatusClaimConfirmed}, SwapStatusClaimSentConfirmed); err != nil {
 			return err
 		}
 
 		// UNBIND tokens(lachain -> mainchain(e.g. btc, eth)
 		if err := d.UpdateSwapStatusWhenConfirmTx(tx, SwapTypeUnbind, txLog, []SwapStatus{
-			SwapStatusClaimSent}, nil, SwapStatusClaimConfirmed); err != nil {
+			SwapStatusClaimSent}, []SwapStatus{
+			SwapStatusClaimConfirmed}, SwapStatusClaimSentConfirmed); err != nil {
 			return err
 		}
 
 	case TxTypePassed:
 		// BIND tokens(mainchain(e.g. btc, eth) -> lachain)
 		if err := d.UpdateSwapStatusWhenConfirmTx(tx, SwapTypeBind, txLog, []SwapStatus{
-			SwapStatusClaimConfirmed}, nil, SwapStatusPassedConfirmed); err != nil {
+			SwapStatusClaimSentConfirmed}, nil, SwapStatusPassedConfirmed); err != nil {
 			return err
 		}
 
 		// UNBIND tokens(lachain -> mainchain(e.g. btc, eth)
 		if err := d.UpdateSwapStatusWhenConfirmTx(tx, SwapTypeUnbind, txLog, []SwapStatus{
-			SwapStatusClaimConfirmed}, nil, SwapStatusPassedConfirmed); err != nil {
+			SwapStatusClaimSentConfirmed}, nil, SwapStatusPassedConfirmed); err != nil {
 			return err
 		}
 

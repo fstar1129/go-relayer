@@ -13,6 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -35,6 +36,7 @@ type Erc20Worker struct {
 	config             *models.WorkerConfig
 	client             *ethclient.Client
 	swapContractAddr   common.Address
+	proxyContractAddr  common.Address
 	db                 *storage.DataBase
 }
 
@@ -75,6 +77,7 @@ func NewErc20Worker(logger *logrus.Logger, cfg *models.WorkerConfig, db *storage
 		config:             cfg,
 		client:             client,
 		swapContractAddr:   cfg.ContractAddr,
+		proxyContractAddr:  cfg.ProxyContractAddr,
 		db:                 db,
 	}
 }
@@ -127,34 +130,55 @@ func (w *Erc20Worker) GetStatus() (*models.WorkerStatus, error) {
 
 // GetBlockAndTxs ...
 func (w *Erc20Worker) GetBlockAndTxs(height int64) (*models.BlockAndTxLogs, error) {
-	var head *Header
-	rpcClient := jsonrpc.NewClient(w.provider)
-	resp, err := rpcClient.Call("eth_getBlockByNumber", fmt.Sprintf("0x%x", height), false)
+	// var head *Header
+	// rpcClient := jsonrpc.NewClient(w.provider)
+	// resp, err := rpcClient.Call("eth_getBlockByNumber", "latest", false)
+	// if err != nil {
+	// 	w.logger.Errorln("while call eth_getBlockByNumber, err = ", err)
+	// 	return nil, err
+	// }
+	// if err := resp.GetObject(&head); err != nil {
+	// 	w.logger.Errorln("while GetObject, err = ", err)
+	// 	return nil, err
+	// }
+
+	// if head == nil {
+	// 	return nil, fmt.Errorf("not found")
+	// }
+
+	// if height >= int64(head.Number) {
+	// 	return nil, fmt.Errorf("not found")
+	// }
+
+	// logs, err := w.getLogs(height, int64(head.Number))
+	// if err != nil {
+	// 	w.logger.Errorf("while getEvents(block number from %d to %d), err = %v", height, head.Number, err)
+	// 	return nil, err
+	// }
+
+	client, err := ethclient.Dial(w.provider)
 	if err != nil {
-		w.logger.Errorln("while call eth_getBlockByNumber, err = ", err)
-		return nil, err
+		panic("new eth client error")
 	}
 
-	if err := resp.GetObject(&head); err != nil {
-		w.logger.Errorln("while GetObject, err = ", err)
-		return nil, err
+	clientResp, err1 := client.HeaderByNumber(context.Background(), nil)
+	if err1 != nil {
+		w.logger.Errorln("while call HeaderByNumber, err = ", err)
 	}
-
-	if head == nil {
-		return nil, fmt.Errorf("GetObject head not found for block 0x%x", height)
-	}
-
-	logs, err := w.getLogs(head.Hash)
+	
+	logs, err := w.getLogs(height, clientResp.Number.Int64())
 	if err != nil {
-		w.logger.Errorf("while getEvents(blockhash = %s), err = %v", head.Hash, err)
+		w.logger.Errorf("while getEvents(block number from %d to %d), err = %v", height, clientResp.Number, err)
 		return nil, err
 	}
+
+	client.Close()
 
 	return &models.BlockAndTxLogs{
-		Height:          height,
-		BlockHash:       head.Hash.String(),
-		ParentBlockHash: head.ParentHash.Hex(),
-		BlockTime:       int64(head.Time),
+		Height:          clientResp.Number.Int64(),
+		BlockHash:       clientResp.Hash().String(),
+		ParentBlockHash: clientResp.ParentHash.Hex(),
+		BlockTime:       int64(clientResp.Time),
 		TxLogs:          logs,
 	}, nil
 }
@@ -165,11 +189,16 @@ func (w *Erc20Worker) GetFetchInterval() time.Duration {
 }
 
 // getLogs ...
-func (w *Erc20Worker) getLogs(blockHash common.Hash) ([]*storage.TxLog, error) {
+func (w *Erc20Worker) getLogs(curHeight, nextHeight int64) ([]*storage.TxLog, error) {
+	if curHeight == 0 {
+		curHeight = nextHeight - 1
+	}
 	logs, err := w.client.FilterLogs(context.Background(), ethereum.FilterQuery{
-		BlockHash: &blockHash,
+		// BlockHash: &blockHash,
+		FromBlock: big.NewInt(curHeight + 1),
+		ToBlock:   big.NewInt(nextHeight),
 		Addresses: []common.Address{w.swapContractAddr},
-		Topics:    [][]common.Hash{},
+		// Topics:    [][]common.Hash{},
 	})
 	if err != nil {
 		w.logger.WithFields(logrus.Fields{"function": "GetLogs()"}).Errorf("get event log error, err=%s", err)
@@ -202,17 +231,8 @@ func (w *Erc20Worker) getLogs(blockHash common.Hash) ([]*storage.TxLog, error) {
 		txLog.TxHash = log.TxHash.Hex()
 		txLog.Status = storage.TxStatusInit
 
-		if txLog.TxType == storage.TxTypeDeposit {
-			previousID := w.db.GetSwapBySwapID(txLog.SwapID)
-			println(len(previousID))
-			if len(previousID) == 0 {
-				models = append(models, txLog)
-			}
-		} else {
-			models = append(models, txLog)
-		}
+		models = append(models, txLog)
 	}
-
 	return models, nil
 }
 
@@ -229,11 +249,10 @@ func (w *Erc20Worker) GetHeight() (int64, error) {
 func (w *Erc20Worker) Vote(depositNonce uint64, originchainID [8]byte, destinationChainID [8]byte, resourceID [32]byte, receiptAddr string, amount string) (string, error) {
 	auth, err := w.getTransactor()
 	if err != nil {
-		w.logger.Errorf("vote: cannot get transactor")
 		return "", err
 	}
 
-	instance, err := labr.NewLabr(w.swapContractAddr, w.client)
+	instance, err := labr.NewLabr(w.proxyContractAddr, w.client)
 	if err != nil {
 		return "", err
 	}
@@ -280,7 +299,7 @@ func (w *Erc20Worker) Claimable(swapID common.Hash) (bool, error) {
 }
 
 func (w *Erc20Worker) GetTxCountLatest() (uint64, error) {
-	var result uint64
+	var result hexutil.Uint64
 	rpcClient := jsonrpc.NewClient(w.provider)
 
 	resp, err := rpcClient.Call("eth_getTransactionCount", w.config.WorkerAddr.Hex(), "pending")
@@ -290,7 +309,7 @@ func (w *Erc20Worker) GetTxCountLatest() (uint64, error) {
 	if err := resp.GetObject(&result); err != nil {
 		return 0, err
 	}
-	return result, nil
+	return uint64(result), nil
 }
 
 // GetTransactor ...
