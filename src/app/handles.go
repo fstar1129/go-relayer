@@ -18,7 +18,7 @@ func (a *App) Endpoints(w http.ResponseWriter, r *http.Request) {
 	}{
 		Endpoints: []string{
 			"/status",
-			"/status/{destination_chain}/{sender}/{receipt}/{amount}/{deposit_nonce}",
+			"/status/{destination_chain}/{sender}/{receipt}/{amount}/{tx_hash}",
 		},
 	}
 

@@ -78,7 +78,7 @@ func (ev DepositEvent) ToTxLog() *storage.TxLog {
 		ReceiverAddr:       ev.RecipientAddress.Hex(),
 		InTokenAddr:        ev.TokenAddress.Hex(),
 		OutAmount:          ev.Amount.String(),
-		SwapStatus:         storage.SwapStatusDepositConfirmed,
+		SwapStatus:         storage.SwapStatusDepositInit,
 	}
 }
 
