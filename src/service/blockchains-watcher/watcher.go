@@ -58,13 +58,13 @@ func (w *WatcherSRV) collector(worker workers.IWorker, threshold time.Duration, 
 
 		retry := 0
 		if err := w.getBlock(worker, height, curBlockLog.BlockHash); err != nil {
-			normalizedErr := strings.ToLower(err.Error())	
+			normalizedErr := strings.ToLower(err.Error())
 			if strings.Contains(normalizedErr, "height must be less than or equal to the current blockchain height") ||
 				strings.Contains(normalizedErr, "not found") ||
 				strings.Contains(normalizedErr, "block number out of range") {
 				w.logger.Infof("try to get ahead block, chain=%s, height=%d", worker.GetChainName(), height)
 			} else {
-				if(retry == 0) {
+				if retry == 0 {
 					w.logger.Errorf("retrying again for the block %d", height)
 					retry = 1
 					time.Sleep(2 * time.Second)
@@ -90,12 +90,7 @@ func (w *WatcherSRV) getBlock(worker workers.IWorker, curHeight int64, curBlockH
 	if err != nil {
 		return fmt.Errorf("get %s block info error, height=%d, err=%s", worker.GetChainName(), curHeight, err.Error())
 	}
-
 	parentHash := blockAndTxLogs.ParentBlockHash
-	// if curHeight != 0 && parentHash != curBlockHash {
-	// 	w.logger.Infof("delete %s block at height %d, hash=%s(parent hash = %s)", worker.GetChainName(), curHeight, curBlockHash, parentHash)
-	// 	return w.storage.DeleteBlockAndTxs(worker.GetChainName(), curHeight)
-	// }
 
 	nextBlockLog := storage.BlockLog{
 		Chain:      worker.GetChainName(),
