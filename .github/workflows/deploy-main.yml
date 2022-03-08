@@ -26,7 +26,8 @@ jobs:
   slack:
     needs: [deploy]
     runs-on: ubuntu-latest
-    - name: Send release message to slack chat 
+    steps:
+    - name: Send release message to slack chat
       id: slack
       uses: slackapi/slack-github-action@v1.18.0
       with:
