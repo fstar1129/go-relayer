@@ -22,6 +22,7 @@ jobs:
   slack:
     needs: [deploy]
     runs-on: ubuntu-latest
+    steps:
     - name: Send release message to slack chat
       id: slack
       uses: slackapi/slack-github-action@v1.18.0
@@ -35,10 +36,10 @@ jobs:
                 "text": {
                   "type": "mrkdwn",
                   "text": "New release relayer-smart-contract:${{ github.ref_name }} deployed to Testnet by ${{ github.actor }}"
-                } 
-              } 
-            ] 
-          } 
+                }
+              }
+            ]
+          }
       env:
         SLACK_WEBHOOK_URL: ${{ secrets.TEST_RELAYERS_SLACK_WEBHOOK_URL }}
         SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
