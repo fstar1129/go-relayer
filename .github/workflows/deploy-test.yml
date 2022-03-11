@@ -1,5 +1,6 @@
 name: Deploy Testnet
 on: [workflow_dispatch]
+concurrency: deploy-main-relayers
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -19,6 +20,8 @@ jobs:
         stack_name: lachain-testnet-relayers
         service_name: relayer${{ matrix.relayer }}
         docker_image: ghcr.io/${{ env.GITHUB_REPOSITORY_OWNER_PART_SLUG }}/${{ env.GITHUB_REPOSITORY_NAME_PART_SLUG }}:${{ env.GITHUB_REF_SLUG_URL }}
+        retry: 90
+        timeout: 1
   slack:
     needs: [deploy]
     runs-on: ubuntu-latest
