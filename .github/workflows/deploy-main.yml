@@ -1,7 +1,6 @@
 name: Deploy Mainnet
-on:
-  workflow_dispatch:
-
+on: [workflow_dispatch]
+concurrency: deploy-main-relayers
 jobs:
   deploy:
     runs-on: ubuntu-latest
