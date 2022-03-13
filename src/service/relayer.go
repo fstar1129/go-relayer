@@ -4,15 +4,15 @@ import (
 	"sync"
 	"time"
 
-	watcher "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/blockchains-watcher"
-	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
-	workers "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers"
-	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/eth-compatible"
+	watcher "github.com/LATOKEN/relayer-smart-contract.git/src/service/blockchains-watcher"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/service/storage"
+	workers "github.com/LATOKEN/relayer-smart-contract.git/src/service/workers"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/eth-compatible"
 
 	"github.com/jinzhu/gorm"
 	"github.com/sirupsen/logrus"
 
-	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/models"
 )
 
 // RelayerSRV ...

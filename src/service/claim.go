@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
-	workers "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers"
-	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/utils"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/service/storage"
+	workers "github.com/LATOKEN/relayer-smart-contract.git/src/service/workers"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/utils"
 )
 
 // emitChainSendClaim ...

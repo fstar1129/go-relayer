@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"time"
 
-	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/utils"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/utils"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -20,10 +20,10 @@ import (
 	"github.com/sirupsen/logrus"
 	jsonrpc "github.com/ybbus/jsonrpc/v2"
 
-	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
-	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
-	labr "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/eth-compatible/abi/bridge/la"
-	es "gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers/eth-compatible/abi/erc20Swap"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/models"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/service/storage"
+	labr "github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/eth-compatible/abi/bridge/la"
+	es "github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/eth-compatible/abi/erc20Swap"
 )
 
 // Erc20Worker ...

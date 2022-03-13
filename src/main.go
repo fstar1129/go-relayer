@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"time"
 
-	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/app"
-	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/config"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/app"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/config"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"

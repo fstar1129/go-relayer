@@ -5,8 +5,8 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/common"
-	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/models"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/common"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/models"
 )
 
 const numPerPage = 100

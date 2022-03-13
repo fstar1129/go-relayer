@@ -1,4 +1,4 @@
-module gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src
+module github.com/LATOKEN/relayer-smart-contract.git/src
 
 go 1.17
 

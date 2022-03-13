@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
-	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/workers"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/service/storage"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/service/workers"
 
 	"github.com/sirupsen/logrus"
 )

@@ -3,7 +3,7 @@ package rlr
 import (
 	"time"
 
-	"gitlab.nekotal.tech/lachain/crosschain/relayer-smart-contract/src/service/storage"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/service/storage"
 )
 
 // emitChainSendClaim ...
