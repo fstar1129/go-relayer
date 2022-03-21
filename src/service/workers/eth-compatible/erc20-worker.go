@@ -36,7 +36,6 @@ type Erc20Worker struct {
 	config             *models.WorkerConfig
 	client             *ethclient.Client
 	swapContractAddr   common.Address
-	proxyContractAddr  common.Address
 	db                 *storage.DataBase
 }
 
@@ -77,7 +76,6 @@ func NewErc20Worker(logger *logrus.Logger, cfg *models.WorkerConfig, db *storage
 		config:             cfg,
 		client:             client,
 		swapContractAddr:   cfg.ContractAddr,
-		proxyContractAddr:  cfg.ProxyContractAddr,
 		db:                 db,
 	}
 }
@@ -252,7 +250,7 @@ func (w *Erc20Worker) Vote(depositNonce uint64, originchainID [8]byte, destinati
 		return "", err
 	}
 
-	instance, err := labr.NewLabr(w.proxyContractAddr, w.client)
+	instance, err := labr.NewLabr(w.swapContractAddr, w.client)
 	if err != nil {
 		return "", err
 	}
