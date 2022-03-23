@@ -22,12 +22,14 @@ func (v *viperConfig) ReadLachainConfig() *models.WorkerConfig {
 }
 
 // ReadEthWorkerConfig reads ethereum chain worker params from config.json
-func (v *viperConfig) ReadWorkersConfig(chains []string) (chainCfgs map[string]*models.WorkerConfig) {
+func (v *viperConfig) ReadWorkersConfig(chains []string) map[string]*models.WorkerConfig {
+	chainCfgs := make(map[string]*models.WorkerConfig)
+
 	for _, chain := range chains {
 		chainCfgs[chain] = v.readWorkerConfig(chain)
 	}
 
-	return
+	return chainCfgs
 }
 
 // readETHWorkerConfig reads ethereum chain worker params from config.json
