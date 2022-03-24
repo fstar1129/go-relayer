@@ -26,8 +26,8 @@ type RelayerSRV struct {
 }
 
 // CreateNewRelayerSRV ...
-func CreateNewRelayerSRV(logger *logrus.Logger, gormDB *gorm.DB, laConfig, posCfg *models.WorkerConfig,
-	bscCfg, ethCfg, avaxCfg *models.WorkerConfig, resourceIDs []*storage.ResourceId) *RelayerSRV {
+func CreateNewRelayerSRV(logger *logrus.Logger, gormDB *gorm.DB, laConfig *models.WorkerConfig,
+	chainCfgs map[string]*models.WorkerConfig, resourceIDs []*storage.ResourceId) *RelayerSRV {
 	// init database
 	db, err := storage.InitStorage(gormDB)
 	if err != nil {
@@ -42,10 +42,9 @@ func CreateNewRelayerSRV(logger *logrus.Logger, gormDB *gorm.DB, laConfig, posCf
 		Workers:  make(map[string]workers.IWorker),
 	}
 	// create erc20 worker
-	inst.Workers[storage.POSChain] = eth.NewErc20Worker(logger, posCfg, db)
-	inst.Workers[storage.BSCChain] = eth.NewErc20Worker(logger, bscCfg, db)
-	inst.Workers[storage.EthChain] = eth.NewErc20Worker(logger, ethCfg, db)
-	inst.Workers[storage.AvaxChain] = eth.NewErc20Worker(logger, avaxCfg, db)
+	for chain, cfg := range chainCfgs {
+		inst.Workers[chain] = eth.NewErc20Worker(logger, cfg, db)
+	}
 	// // create la worker
 	inst.Workers[storage.LaChain] = inst.laWorker
 
