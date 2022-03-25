@@ -40,7 +40,7 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 	}
 
 	tetherRID := r.storage.FetchResourceIDByName("tether").ID
-	bscDestID := r.Workers[storage.BSCChain].GetDestinationID()
+	bscDestID := r.Workers["BSC"].GetDestinationID()
 	var amount string
 	if swap.OriginChainID == bscDestID && swap.ResourceID == tetherRID {
 		amount = utils.Convertto6Decimals(swap.OutAmount)

@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/LATOKEN/relayer-smart-contract.git/src/service/storage"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/LATOKEN/relayer-smart-contract.git/src/service/storage"
-	"github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/utils"
 )
 
 ////
@@ -112,14 +112,14 @@ func (ev ProposalEvent) ToTxLog() *storage.TxLog {
 // ParseEvent ...
 func (w *Erc20Worker) parseEvent(log *types.Log) (ContractEvent, error) {
 	if bytes.Equal(log.Topics[0][:], DepositEventHash[:]) {
-		if w.chainName == storage.LaChain {
+		if w.chainName == "LA" {
 			return ParseLaDepositEvent(log)
 		} else {
 			return ParseEthDepositEvent(log)
 		}
 	}
 	if bytes.Equal(log.Topics[0][:], ProposalEventHash[:]) {
-		if w.chainName == storage.LaChain {
+		if w.chainName == "LA" {
 			return ParseLaProposalEvent(log)
 		} else {
 			return ParseEthProposalEvent(log)

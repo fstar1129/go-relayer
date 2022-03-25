@@ -1,21 +1,5 @@
 package storage
 
-var (
-	LaChain string = "LA"
-	// POSChain - Polygon chain
-	POSChain string = "POS"
-	// BSCChain - Binance chain
-	BSCChain string = "BSC"
-	//EthChain - ropsten testnet
-	EthChain string = "ETH"
-	// BtcChain - Bitcoin chain
-	BtcChain string = "BTC"
-	// AvaxChain - Avalanche chain
-	AvaxChain string = "AVAX"
-	// FtmChain - Fantom chain
-	FtmChain string = "FTM"
-)
-
 // BlockType ...
 type BlockType string
 
