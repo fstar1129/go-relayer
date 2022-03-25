@@ -340,18 +340,18 @@ func (w *Erc20Worker) getTransactor() (auth *bind.TransactOpts, err error) {
 	}
 
 	var nonce uint64
-	if w.chainName == "LA" {
-		nonce, err = w.GetTxCountLatest()
-		if err != nil {
-			return nil, err
-		}
+	// if w.chainName == "LA" {
+	// 	nonce, err = w.GetTxCountLatest()
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
 
-	} else {
-		nonce, err = w.client.PendingNonceAt(context.Background(), w.config.WorkerAddr)
-		if err != nil {
-			return nil, err
-		}
+	// } else {
+	nonce, err = w.client.PendingNonceAt(context.Background(), w.config.WorkerAddr)
+	if err != nil {
+		return nil, err
 	}
+	// }
 
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)                // in wei
