@@ -33,7 +33,7 @@ func main() {
 	// set logger level
 	level, err := logrus.ParseLevel(cfg.GetString("logger-level"))
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("logrus err: %s", err.Error()))
 	}
 	logger.SetLevel(level)
 
