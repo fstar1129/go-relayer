@@ -167,8 +167,7 @@ func (d *DataBase) GetTxsSentByStatus(chain string) ([]*TxSent, error) {
 // GetTxsSentByType ...
 func (d *DataBase) GetTxsSentByType(chain string, txType TxType, swap *Swap) []*TxSent {
 	txsSent := make([]*TxSent, 0)
-	query := d.db.Where("chain = ? and type = ?", chain, txType)
-	query = query.Where("swap_id = ?", swap.SwapID)
+	query := d.db.Where("swap_id = ?", swap.SwapID)
 	query.Order("id desc").Find(&txsSent)
 
 	return txsSent
