@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        relayer: ['1', '2', '3', '4', '5']
+        relayer: ['1', '2', '3', '4', '5', '6', '7']
     steps:
     - uses: actions/checkout@v2
     - uses: rlespinasse/github-slug-action@v4
