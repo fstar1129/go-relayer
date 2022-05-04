@@ -47,9 +47,12 @@ func (d *DataBase) ConfirmWorkerTx(chainID string, txLogs []*TxLog, txHashes []s
 
 	// create swap
 	for _, swap := range newSwaps {
-		if err := tx.Create(swap).Error; err != nil {
-			tx.Rollback()
-			return err
+		var previousSwap Swap
+		if tx.Model(Swap{}).Where("swap_id = ?", swap.SwapID).Order("swap_id desc").First(&previousSwap); previousSwap.SwapID == "" {
+			if err := tx.Create(swap).Error; err != nil {
+				tx.Rollback()
+				return err
+			}
 		}
 	}
 
@@ -77,29 +80,29 @@ func (d *DataBase) ConfirmTx(tx *gorm.DB, txLog *TxLog) error {
 	case TxTypeDeposit:
 		// BIND tokens(mainchain(e.g. btc, eth) -> lachain)
 		if err := d.UpdateSwapStatusWhenConfirmTx(tx, SwapTypeBind, txLog, []SwapStatus{
-			SwapStatusDepositInit, SwapStatusDepositFailed},
-			nil, SwapStatusDepositConfirmed); err != nil {
+			SwapStatusDepositFailed},
+			[]SwapStatus{SwapStatusDepositInit, SwapStatusDepositConfirmed}, SwapStatusClaimSent); err != nil {
 			return err
 		}
 
 		// UNBIND tokens(lachain -> mainchain(e.g. btc, eth)
 		if err := d.UpdateSwapStatusWhenConfirmTx(tx, SwapTypeUnbind, txLog, []SwapStatus{
-			SwapStatusDepositInit, SwapStatusDepositFailed},
-			nil, SwapStatusDepositConfirmed); err != nil {
+			SwapStatusDepositFailed},
+			[]SwapStatus{SwapStatusDepositInit, SwapStatusDepositConfirmed}, SwapStatusClaimSent); err != nil {
 			return err
 		}
 	case TxTypeVote:
 		// BIND tokens(mainchain(e.g. btc, eth) -> lachain)
 		if err := d.UpdateSwapStatusWhenConfirmTx(tx, SwapTypeBind, txLog, []SwapStatus{
 			SwapStatusClaimSent}, []SwapStatus{
-			SwapStatusClaimConfirmed}, SwapStatusClaimSentConfirmed); err != nil {
+			SwapStatusClaimConfirmed, SwapStatusDepositInit, SwapStatusDepositConfirmed}, SwapStatusClaimSentConfirmed); err != nil {
 			return err
 		}
 
 		// UNBIND tokens(lachain -> mainchain(e.g. btc, eth)
 		if err := d.UpdateSwapStatusWhenConfirmTx(tx, SwapTypeUnbind, txLog, []SwapStatus{
 			SwapStatusClaimSent}, []SwapStatus{
-			SwapStatusClaimConfirmed}, SwapStatusClaimSentConfirmed); err != nil {
+			SwapStatusClaimConfirmed, SwapStatusDepositInit, SwapStatusDepositConfirmed}, SwapStatusClaimSentConfirmed); err != nil {
 			return err
 		}
 
