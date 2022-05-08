@@ -74,7 +74,6 @@ func BytesToBytes8(b []byte) [8]byte {
 }
 
 func CalcutateSwapID(originChainID, destChainID, nonce string) string {
-
 	return hexutil.Encode(crypto.Keccak256([]byte(originChainID), []byte(destChainID))) + nonce
 }
 

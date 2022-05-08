@@ -63,9 +63,8 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 		utils.StringToBytes32(swap.ResourceID), swap.ReceiverAddr, amount)
 	if err != nil {
 		txSent.ErrMsg = err.Error()
-		txSent.Status = storage.TxSentStatusFailed
+		txSent.Status = storage.TxSentStatusNotFound
 		r.storage.UpdateSwapStatus(swap, storage.SwapStatusClaimSentFailed, "")
-		r.storage.CreateTxSent(txSent)
 		return "", fmt.Errorf("could not send claim tx: %w", err)
 	}
 	txSent.TxHash = txHash
