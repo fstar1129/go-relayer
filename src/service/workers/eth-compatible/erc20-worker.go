@@ -23,7 +23,6 @@ import (
 	"github.com/LATOKEN/relayer-smart-contract.git/src/models"
 	"github.com/LATOKEN/relayer-smart-contract.git/src/service/storage"
 	labr "github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/eth-compatible/abi/bridge/la"
-	es "github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/eth-compatible/abi/erc20Swap"
 )
 
 // Erc20Worker ...
@@ -283,38 +282,6 @@ func (w *Erc20Worker) Vote(depositNonce uint64, originchainID [8]byte, destinati
 	}
 
 	return tx.Hash().String(), nil
-}
-
-// HasSwap ...
-func (w *Erc20Worker) HasSwap(swapID common.Hash) (bool, error) {
-	instance, err := es.NewERC20Swap(w.swapContractAddr, w.client)
-	if err != nil {
-		return false, err
-	}
-
-	return instance.IsSwapExist(nil, swapID)
-}
-
-// Refundable ...
-func (w *Erc20Worker) Refundable(swapID common.Hash) (bool, error) {
-	instance, err := es.NewERC20Swap(w.swapContractAddr, w.client)
-	if err != nil {
-		return false, err
-	}
-
-	refundable, err := instance.Refundable(nil, swapID)
-	return refundable, err
-}
-
-// Claimable ...
-func (w *Erc20Worker) Claimable(swapID common.Hash) (bool, error) {
-	instance, err := es.NewERC20Swap(w.swapContractAddr, w.client)
-	if err != nil {
-		return false, err
-	}
-
-	claimable, err := instance.Claimable(nil, swapID)
-	return claimable, err
 }
 
 func (w *Erc20Worker) GetTxCountLatest() (uint64, error) {

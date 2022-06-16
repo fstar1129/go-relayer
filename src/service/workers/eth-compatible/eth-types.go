@@ -5,11 +5,11 @@ import (
 	"math/big"
 	"strings"
 
+	ethbr "github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/eth-compatible/abi/bridge/eth"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/utils"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	ethbr "github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/eth-compatible/abi/bridge/eth"
-	"github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/utils"
 )
 
 // ParseDepositEvent ...
@@ -25,6 +25,7 @@ func ParseEthDepositEvent(log *types.Log) (ContractEvent, error) {
 	ev.DepositNonce = big.NewInt(0).SetBytes(log.Topics[3].Bytes()).Uint64()
 
 	fmt.Printf("Deposited\n")
+	fmt.Printf("Swap ID: %s", utils.CalcutateSwapID(common.Bytes2Hex(ev.OriginChainID[:]), common.Bytes2Hex(ev.DestinationChainID[:]), fmt.Sprint(ev.DepositNonce)))
 	fmt.Printf("destination chain ID: 0x%s\n", common.Bytes2Hex(ev.DestinationChainID[:]))
 	fmt.Printf("resource ID: 0x%s\n", common.Bytes2Hex(ev.ResourceID[:]))
 	fmt.Printf("deposit nonce: %d\n", ev.DepositNonce)
@@ -49,10 +50,12 @@ func ParseEthProposalEvent(log *types.Log) (ContractEvent, error) {
 	ev.RecipientAddress = common.BytesToAddress(log.Topics[3].Bytes())
 
 	fmt.Printf("ProposalEvent\n")
+	fmt.Printf("Swap ID: %s", utils.CalcutateSwapID(common.Bytes2Hex(ev.OriginChainID[:]), common.Bytes2Hex(ev.DestinationChainID[:]), fmt.Sprint(ev.DepositNonce)))
 	fmt.Printf("destination chain ID: 0x%s\n", common.Bytes2Hex(ev.DestinationChainID[:]))
 	fmt.Printf("deposit nonce: %d\n", ev.DepositNonce)
 	fmt.Printf("status: %d\n", ev.Status)
 	fmt.Printf("resource ID: 0x%s\n", common.Bytes2Hex(ev.ResourceID[:]))
+	fmt.Printf("amount: %s", ev.Amount.String())
 	fmt.Printf("DataHash: 0x%s\n\n", common.Bytes2Hex(ev.DataHash[:]))
 
 	return ev, nil

@@ -20,12 +20,12 @@ func (r *RelayerSRV) emitChainSendClaim() {
 				if _, err := r.sendClaim(r.laWorker, swap); err != nil {
 					r.logger.Errorf("submit claim failed: %s", err)
 				}
+				time.Sleep(2 * time.Second)
 			} else {
 				r.handleTxSent(r.laWorker.GetChainName(), swap, storage.TxTypeDeposit,
 					storage.SwapStatusDepositConfirmed, storage.SwapStatusDepositFailed)
 			}
 		}
-
 		time.Sleep(2 * time.Second)
 	}
 }
