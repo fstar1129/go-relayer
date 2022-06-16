@@ -39,7 +39,7 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 		CreateTime: time.Now().Unix(),
 	}
 
-	tetherRID := r.storage.FetchResourceIDByName("tether").ID
+	// tetherRID := r.storage.FetchResourceIDByName("tether").ID
 	bscDestID := ""
 	if worker, ok := r.Workers["BSC"]; ok {
 		bscDestID = worker.GetDestinationID()
@@ -49,9 +49,9 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 		htDestID = worker.GetDestinationID()
 	}
 	var amount string
-	if (swap.OriginChainID == bscDestID || swap.OriginChainID == htDestID) && swap.ResourceID == tetherRID {
+	if (swap.OriginChainID == bscDestID && swap.InTokenAddr == "0x55d398326f99059ff775485246999027b3197955") || (swap.OriginChainID == htDestID && swap.InTokenAddr == "0xa71edc38d189767582c38a3145b5873052c3e47a") {
 		amount = utils.Convertto6Decimals(swap.OutAmount)
-	} else if (swap.DestinationChainID == bscDestID || swap.DestinationChainID == htDestID) && swap.ResourceID == tetherRID {
+	} else if (swap.DestinationChainID == bscDestID || swap.DestinationChainID == htDestID) && swap.InTokenAddr == "0x32D2b9bBCf25525b8D7E92CBAB14Ca1a5f347B14" {
 		amount = utils.Convertto18Decimals(swap.OutAmount)
 	} else {
 		amount = swap.OutAmount
