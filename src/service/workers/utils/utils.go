@@ -8,7 +8,6 @@ import (
 	"github.com/LATOKEN/relayer-smart-contract.git/src/models"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -74,7 +73,7 @@ func BytesToBytes8(b []byte) [8]byte {
 }
 
 func CalcutateSwapID(originChainID, destChainID, nonce string) string {
-	return hexutil.Encode(crypto.Keccak256([]byte(originChainID), []byte(destChainID))) + nonce
+	return originChainID + destChainID + nonce
 }
 
 func Convertto6Decimals(amount string) string {
