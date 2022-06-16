@@ -69,7 +69,7 @@ func (r *RelayerSRV) Run() {
 	// run Worker workers
 	for _, worker := range r.Workers {
 		go r.ConfirmWorkerTx(worker)
-		go r.CheckTxSentRoutine(worker)
+		// go r.CheckTxSentRoutine(worker)
 	}
 }
 
