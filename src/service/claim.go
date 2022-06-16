@@ -2,6 +2,7 @@ package rlr
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/LATOKEN/relayer-smart-contract.git/src/service/storage"
@@ -49,9 +50,9 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 		htDestID = worker.GetDestinationID()
 	}
 	var amount string
-	if (swap.OriginChainID == bscDestID && swap.InTokenAddr == "0x55d398326f99059ff775485246999027b3197955") || (swap.OriginChainID == htDestID && swap.InTokenAddr == "0xa71edc38d189767582c38a3145b5873052c3e47a") {
+	if (swap.OriginChainID == bscDestID && strings.ToLower(swap.InTokenAddr) == strings.ToLower("0x55d398326f99059ff775485246999027b3197955")) || (swap.OriginChainID == htDestID && strings.ToLower(swap.InTokenAddr) == strings.ToLower("0xa71edc38d189767582c38a3145b5873052c3e47a")) {
 		amount = utils.Convertto6Decimals(swap.OutAmount)
-	} else if (swap.DestinationChainID == bscDestID || swap.DestinationChainID == htDestID) && swap.InTokenAddr == "0x32D2b9bBCf25525b8D7E92CBAB14Ca1a5f347B14" {
+	} else if (swap.DestinationChainID == bscDestID || swap.DestinationChainID == htDestID) && strings.ToLower(swap.InTokenAddr) == strings.ToLower("0x32D2b9bBCf25525b8D7E92CBAB14Ca1a5f347B14") {
 		amount = utils.Convertto18Decimals(swap.OutAmount)
 	} else {
 		amount = swap.OutAmount
