@@ -39,23 +39,30 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 		SwapID:     swap.SwapID,
 		CreateTime: time.Now().Unix(),
 	}
-
-	// tetherRID := r.storage.FetchResourceIDByName("tether").ID
-	bscDestID := ""
-	if worker, ok := r.Workers["BSC"]; ok {
-		bscDestID = worker.GetDestinationID()
+	var originWorker workers.IWorker
+	var destWorker workers.IWorker
+	for _, wrkr := range r.Workers {
+		if strings.ToLower(wrkr.GetDestinationID()) == strings.ToLower(swap.OriginChainID) {
+			originWorker = wrkr
+		}
+		if strings.ToLower(wrkr.GetDestinationID()) == strings.ToLower(swap.DestinationChainID) {
+			destWorker = wrkr
+		}
 	}
-	htDestID := ""
-	if worker, ok := r.Workers["HT"]; ok {
-		htDestID = worker.GetDestinationID()
+	originDecimals, err := originWorker.GetDecimalsFromResourceID(swap.ResourceID)
+	destDecimals, err := destWorker.GetDecimalsFromResourceID(swap.ResourceID)
+	if err != nil {
+		println("error in decimals", err.Error())
+		txSent.ErrMsg = err.Error()
+		txSent.Status = storage.TxSentStatusNotFound
+		r.storage.UpdateSwapStatus(swap, storage.SwapStatusClaimSentFailed, "")
+		return "", fmt.Errorf("could not send claim tx: %w", err)
 	}
 	var amount string
-	if (swap.OriginChainID == bscDestID && strings.ToLower(swap.InTokenAddr) == strings.ToLower("0x55d398326f99059ff775485246999027b3197955")) || (swap.OriginChainID == htDestID && strings.ToLower(swap.InTokenAddr) == strings.ToLower("0xa71edc38d189767582c38a3145b5873052c3e47a")) {
-		amount = utils.Convertto6Decimals(swap.OutAmount)
-	} else if (swap.DestinationChainID == bscDestID || swap.DestinationChainID == htDestID) && strings.ToLower(swap.InTokenAddr) == strings.ToLower("0x32D2b9bBCf25525b8D7E92CBAB14Ca1a5f347B14") {
-		amount = utils.Convertto18Decimals(swap.OutAmount)
-	} else {
+	if originDecimals == destDecimals || originDecimals == 0 || destDecimals == 0 {
 		amount = swap.OutAmount
+	} else {
+		amount = utils.ConvertDecimals(originDecimals, destDecimals, swap.OutAmount)
 	}
 	r.logger.Infof("claim parameters: depositNonce(%d) | sender(%s) | outAmount(%d) | resourceID(%s)\n",
 		swap.DepositNonce, swap.SenderAddr, amount, swap.ResourceID)

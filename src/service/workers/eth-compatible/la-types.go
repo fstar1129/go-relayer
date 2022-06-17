@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"strings"
 
+	labr "github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/eth-compatible/abi/bridge/la"
+	"github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/utils"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	labr "github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/eth-compatible/abi/bridge/la"
 )
 
 // ParseLaDepositEvent ...
@@ -44,6 +45,7 @@ func ParseLaProposalEvent(log *types.Log) (ContractEvent, error) {
 
 	fmt.Printf("ProposalEvent\n")
 	fmt.Printf("origin chain ID: 0x%s\n", common.Bytes2Hex(ev.OriginChainID[:]))
+	fmt.Printf("Swap ID:%s\n", utils.CalcutateSwapID(common.Bytes2Hex(ev.OriginChainID[:]), common.Bytes2Hex(ev.DestinationChainID[:]), fmt.Sprint(ev.DepositNonce)))
 	fmt.Printf("destination chain ID: 0x%s\n", common.Bytes2Hex(ev.DestinationChainID[:]))
 	fmt.Printf("deposit nonce: %d\n", ev.DepositNonce)
 	fmt.Printf("status: %d\n", ev.Status)

@@ -40,6 +40,8 @@ type IWorker interface {
 	// GetBalanceAlertMsg(tokenSymbol string) (string, error)
 	// IsSameAddress returns is addrA the same with addrB
 	IsSameAddress(addrA string, addrB string) bool
+	GetDecimalsFromResourceID(resourceID string) (uint8, error)
+
 	// CalcSwapID calculate swap id for each chain
 	//CalcSwapID(randomNumberHash common.Hash, sender string, senderOtherChain string) ([]byte, error)
 	// Refundable returns is swap refundable
