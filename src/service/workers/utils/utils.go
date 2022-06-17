@@ -87,3 +87,11 @@ func Convertto18Decimals(amount string) string {
 	ret := big.NewInt(0).Mul(big.NewInt(1000000000000), value)
 	return ret.Text(10)
 }
+
+func ConvertDecimals(originDecimals, destDecimals uint8, amount string) string {
+	origin := new(big.Int).SetInt64(int64(math.Pow10(int(originDecimals))))
+	dest := new(big.Int).SetInt64(int64(math.Pow10(int(destDecimals))))
+	amountInFloat, _ := new(big.Int).SetString(amount, 10)
+	// conversion := new(big.Int).Quo(origin, dest)
+	return new(big.Int).Quo(new(big.Int).Mul(amountInFloat, dest), origin).String()
+}

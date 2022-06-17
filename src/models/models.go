@@ -52,7 +52,7 @@ type WorkerConfig struct {
 	PrivateKey                     string         `json:"private_key"`
 	Provider                       string         `json:"provider"`
 	ContractAddr                   common.Address `json:"contract_addr"`
-	TokenContractAddr              common.Address `json:"token_contract_addr"`
+	NativeResourceID               string         `json:"native_resource_id"`
 	WorkerAddr                     common.Address `json:"worker_addr"`
 	ColdWalletAddr                 common.Address `json:"cold_wallet_addr"`
 	TokenBalanceAlertThreshold     *big.Int       `json:"token_balance_alert_threshold"`
