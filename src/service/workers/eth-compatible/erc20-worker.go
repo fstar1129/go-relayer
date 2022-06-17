@@ -6,6 +6,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/utils"
@@ -22,7 +23,11 @@ import (
 
 	"github.com/LATOKEN/relayer-smart-contract.git/src/models"
 	"github.com/LATOKEN/relayer-smart-contract.git/src/service/storage"
+	ERC20 "github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/eth-compatible/abi/ERC20"
+	ethbr "github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/eth-compatible/abi/bridge/eth"
 	labr "github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/eth-compatible/abi/bridge/la"
+	ethHandler "github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/eth-compatible/abi/handler/eth"
+	laHandler "github.com/LATOKEN/relayer-smart-contract.git/src/service/workers/eth-compatible/abi/handler/la"
 )
 
 // Erc20Worker ...
@@ -381,133 +386,113 @@ func (w *Erc20Worker) SendAmount(address string, amount *big.Int) (string, error
 	return "", fmt.Errorf("not implemented") // TODO
 }
 
-func initTokenAddresses(client *ethclient.Client, addresses []common.Address) (tokenAddresses map[string]common.Address) {
-	// for _, address := range addresses {
-	// 	instance, err := es.NewERC20(address, client)
-	// 	if err != nil {
-	// 		log.Fatalf("Create new ERC20 instance, err=%v\n", err)
-	// 		return
-	// 	}
+func (w *Erc20Worker) GetHandlerAddr(resourceId string) (string, error) {
+	callOpts := &bind.CallOpts{
+		Pending: true,
+		From:    w.swapContractAddr,
+		Context: context.Background(),
+	}
 
-	// 	symbol, err := instance.Symbol(nil)
-	// 	if err != nil {
-	// 		log.Fatalf("Get token symbol, err=%v\n", err)
-	// 		return
-	// 	}
-	// 	tokenAddresses[symbol] = address
+	if w.chainName == "LA" {
+		instance, err := labr.NewLabr(w.swapContractAddr, w.client)
+		if err != nil {
+			return "", err
+		}
 
-	// 	time.Sleep(200 * time.Millisecond)
-	// }
+		handlerAddr, err := instance.ResourceIDToHandlerAddress(callOpts, utils.StringToBytes32(resourceId))
+		if err != nil {
+			return "", err
+		}
 
-	return tokenAddresses
+		return handlerAddr.Hex(), nil
+	} else {
+		instance, err := ethbr.NewEthbr(w.swapContractAddr, w.client)
+		if err != nil {
+			return "", err
+		}
+
+		handlerAddr, err := instance.ResourceIDToHandlerAddress(callOpts, utils.StringToBytes32(resourceId))
+		if err != nil {
+			return "", err
+		}
+		return handlerAddr.Hex(), nil
+	}
 }
 
-// func (w *Erc20Worker) CreateOrClaimRequest(swapID common.Hash, tokenAddr, erc20Addr, laAddr, recipientAddr, otherChainRecipientAddr string,
-// 	timestamp int64, heightSpan int64, outAmount *big.Int) (string, error) {
-// 	auth, err := w.GetTransactor()
-// 	if err != nil {
-// 		return "", err
-// 	}
+func (w *Erc20Worker) GetTokenAddr(handlerAddr, resourceId string) (string, error) {
+	callOpts := &bind.CallOpts{
+		Pending: true,
+		From:    common.HexToAddress(handlerAddr),
+		Context: context.Background(),
+	}
 
-// 	instance, err := es.NewERC20Swap(w.swapContractAddr, w.client)
-// 	if err != nil {
-// 		return "", err
-// 	}
+	if w.chainName == "LA" {
+		instance, err := laHandler.NewLaHandler(common.HexToAddress(handlerAddr), w.client)
+		if err != nil {
+			return "", err
+		}
 
-// 	// convert address hex to ethereum like address
-// 	tknAddr := common.HexToAddress(tokenAddr)
-// 	recvAddr := common.HexToAddress(recipientAddr)
+		tokenAddr, err := instance.ResourceIDToTokenContractAddress(callOpts, utils.StringToBytes32(resourceId))
+		if err != nil {
+			return "", err
+		}
 
-// 	tx, err := instance.CreateOrClaim(auth, swapID, outAmount, big.NewInt(heightSpan), [32]byte{}, uint64(timestamp), tknAddr, recvAddr)
-// 	if err != nil {
-// 		return "", err
-// 	}
+		return tokenAddr.Hex(), nil
+	} else {
+		instance, err := ethHandler.NewEthHandler(common.HexToAddress(handlerAddr), w.client)
+		if err != nil {
+			return "", err
+		}
 
-// 	return tx.Hash().String(), nil
-// }
+		tokenAddr, err := instance.ResourceIDToTokenContractAddress(callOpts, utils.StringToBytes32(resourceId))
+		if err != nil {
+			return "", err
+		}
 
-// // CreateRequest ...
-// func (w *Erc20Worker) CreateRequest(swapID common.Hash) (string, error) {
-// 	auth, err := w.GetTransactor()
-// 	if err != nil {
-// 		return "", err
-// 	}
+		return tokenAddr.Hex(), nil
+	}
+}
 
-// 	instance, err := bt.NewManager(w.swapContractAddr, w.client)
-// 	if err != nil {
-// 		return "", err
-// 	}
+func (w *Erc20Worker) GetDecimals(tokenAddr string) (uint8, error) {
+	callOpts := &bind.CallOpts{
+		Pending: true,
+		From:    common.HexToAddress(tokenAddr),
+		Context: context.Background(),
+	}
 
-// 	tx, err := instance.CreateSwapRequest(auth, swapID)
-// 	if err != nil {
-// 		return "", err
-// 	}
+	instance, err := ERC20.NewErc20(common.HexToAddress(tokenAddr), w.client)
+	if err != nil {
+		return 0, err
+	}
 
-// 	return tx.Hash().String(), nil
-// }
+	decimals, err := instance.Decimals(callOpts)
+	if err != nil {
+		return 0, err
+	}
 
-// // SendClaim ...
-// func (w *Erc20Worker) SendClaim(swapID common.Hash) (string, error) {
-// 	auth, err := w.GetTransactor()
-// 	if err != nil {
-// 		return "", err
-// 	}
+	return decimals, nil
+}
 
-// 	instance, err := bt.NewManager(w.swapContractAddr, w.client)
-// 	if err != nil {
-// 		return "", err
-// 	}
+func (w *Erc20Worker) GetDecimalsFromResourceID(resourceID string) (uint8, error) {
 
-// 	tx, err := instance.ApproveSwap(auth, swapID)
-// 	if err != nil {
-// 		return "", err
-// 	}
+	if strings.ToLower(w.config.NativeResourceID) == strings.ToLower(resourceID) {
+		return 18, nil
+	}
 
-// 	return tx.Hash().String(), nil
-// }
+	handlerAddr, err := w.GetHandlerAddr(resourceID)
+	if err != nil {
+		return 0, err
+	}
 
-// // GetBalanceAlertMsg ...
-// func (w *Erc20Worker) GetBalanceAlertMsg(tokenSymbol string) (string, error) {
-// 	if w.config.EthBalanceAlertThreshold.Cmp(big.NewInt(0)) == 0 &&
-// 		w.config.TokenBalanceAlertThreshold.Cmp(big.NewInt(0)) == 0 &&
-// 		w.config.AllowanceBalanceAlertThreshold.Cmp(big.NewInt(0)) == 0 {
-// 		return "", nil
-// 	}
+	tokenAddr, err := w.GetTokenAddr(handlerAddr, resourceID)
+	if err != nil {
+		return 0, err
+	}
 
-// 	alertMsg := ""
-// 	if w.config.EthBalanceAlertThreshold.Cmp(big.NewInt(0)) > 0 {
-// 		ethBalance, err := w.EthBalance(w.config.WorkerAddr)
-// 		if err != nil {
-// 			return "", err
-// 		}
+	decimals, err := w.GetDecimals(tokenAddr)
+	if err != nil {
+		return 0, err
+	}
 
-// 		if ethBalance.Cmp(w.config.EthBalanceAlertThreshold) < 0 {
-// 			alertMsg = alertMsg + fmt.Sprintf("eth balance(%s) is less than %s\n",
-// 				ethBalance.String(), w.config.EthBalanceAlertThreshold.String())
-// 		}
-// 	}
-
-// 	if w.config.AllowanceBalanceAlertThreshold.Cmp(big.NewInt(0)) > 0 {
-// 		allowance, err := w.Allowance(tokenSymbol)
-// 		if err != nil {
-// 			return "", err
-// 		}
-// 		if allowance.Cmp(w.config.AllowanceBalanceAlertThreshold) < 0 {
-// 			alertMsg = alertMsg + fmt.Sprintf("token allowance balance(%s) is less than %s\n",
-// 				allowance.String(), w.config.AllowanceBalanceAlertThreshold.String())
-// 		}
-// 	}
-
-// 	if w.config.TokenBalanceAlertThreshold.Cmp(big.NewInt(0)) > 0 {
-// 		tokenBalance, err := w.Erc20Balance(w.config.WorkerAddr, "") // TODO
-// 		if err != nil {
-// 			return "", err
-// 		}
-// 		if tokenBalance.Cmp(w.config.TokenBalanceAlertThreshold) < 0 {
-// 			alertMsg = alertMsg + fmt.Sprintf("token balance(%s) is less than %s",
-// 				tokenBalance.String(), w.config.TokenBalanceAlertThreshold.String())
-// 		}
-// 	}
-
-// 	return alertMsg, nil
-// }
+	return decimals, nil
+}

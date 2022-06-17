@@ -44,7 +44,7 @@ func (v *viperConfig) readWorkerConfig(name string) *models.WorkerConfig {
 		PrivateKey:         v.GetString(fmt.Sprintf("workers.%s.private_key", name)),
 		Provider:           v.GetString(fmt.Sprintf("workers.%s.provider", name)),
 		ContractAddr:       common.HexToAddress(v.GetString(fmt.Sprintf("workers.%s.contract_addr", name))),
-		TokenContractAddr:  common.HexToAddress(v.GetString(fmt.Sprintf("workers.%s.token_addr", name))),
+		NativeResourceID:   v.GetString(fmt.Sprintf("workers.%s.native_resource_id", name)),
 		GasLimit:           v.GetInt64(fmt.Sprintf("workers.%s.gas_limit", name)),
 		GasPrice:           big.NewInt(v.GetInt64(fmt.Sprintf("workers.%s.gas_price", name))),
 		FetchInterval:      v.GetInt64(fmt.Sprintf("workers.%s.fetch_interval", name)),
