@@ -115,14 +115,14 @@ func (w *Erc20Worker) parseEvent(log *types.Log) (ContractEvent, error) {
 		if w.chainName == "LA" {
 			return w.ParseLaDepositEvent(log)
 		} else {
-			return ParseEthDepositEvent(log)
+			return w.ParseEthDepositEvent(log)
 		}
 	}
 	if bytes.Equal(log.Topics[0][:], ProposalEventHash[:]) {
 		if w.chainName == "LA" {
 			return w.ParseLaProposalEvent(log)
 		} else {
-			return ParseEthProposalEvent(log)
+			return w.ParseEthProposalEvent(log)
 		}
 	}
 	return nil, nil
