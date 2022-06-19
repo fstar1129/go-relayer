@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"time"
 
 	"github.com/LATOKEN/relayer-smart-contract.git/src/app"
@@ -37,12 +38,16 @@ func main() {
 	}
 	logger.SetLevel(level)
 
-	os.MkdirAll("./logs", os.ModePerm)
-	logFile, err := os.OpenFile("./logs/relayer.log", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
-	if err != nil {
-		fmt.Printf("error opening file: %v", err)
+	logfile := cfg.GetString("log-file")
+	if logfile != "" {
+		dir := filepath.Dir(logfile)
+		os.MkdirAll(dir, os.ModePerm)
+		logFile, err := os.OpenFile(logfile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+		if err != nil {
+			logger.Errorf("error opening file: %v", err)
+		}
+		logger.SetOutput(logFile)
 	}
-	logger.SetOutput(logFile)
 
 	// Set connection to onlife_business database
 	db, err := gorm.Open(dbConfig.DBDriver, dbURL)

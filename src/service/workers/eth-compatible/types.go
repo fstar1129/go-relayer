@@ -113,14 +113,14 @@ func (ev ProposalEvent) ToTxLog() *storage.TxLog {
 func (w *Erc20Worker) parseEvent(log *types.Log) (ContractEvent, error) {
 	if bytes.Equal(log.Topics[0][:], DepositEventHash[:]) {
 		if w.chainName == "LA" {
-			return ParseLaDepositEvent(log)
+			return w.ParseLaDepositEvent(log)
 		} else {
 			return ParseEthDepositEvent(log)
 		}
 	}
 	if bytes.Equal(log.Topics[0][:], ProposalEventHash[:]) {
 		if w.chainName == "LA" {
-			return ParseLaProposalEvent(log)
+			return w.ParseLaProposalEvent(log)
 		} else {
 			return ParseEthProposalEvent(log)
 		}
