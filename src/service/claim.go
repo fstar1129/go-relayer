@@ -50,6 +50,13 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 		}
 	}
 	originDecimals, err := originWorker.GetDecimalsFromResourceID(swap.ResourceID)
+	if err != nil {
+		println("error in decimals", err.Error())
+		txSent.ErrMsg = err.Error()
+		txSent.Status = storage.TxSentStatusNotFound
+		r.storage.UpdateSwapStatus(swap, storage.SwapStatusClaimSentFailed, "")
+		return "", fmt.Errorf("could not send claim tx: %w", err)
+	}
 	destDecimals, err := destWorker.GetDecimalsFromResourceID(swap.ResourceID)
 	if err != nil {
 		println("error in decimals", err.Error())
