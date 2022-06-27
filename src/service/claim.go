@@ -76,8 +76,15 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 		return "", fmt.Errorf("could not send claim tx: %w", err)
 	}
 	var amount string
-	if originDecimals == destDecimals || originDecimals == 0 || destDecimals == 0 {
+	if originDecimals == destDecimals {
 		amount = swap.OutAmount
+	} else if originDecimals == 0 || destDecimals == 0 {
+		err = fmt.Errorf("One of decimals is zero")
+		println("error in decimals", err.Error())
+		txSent.ErrMsg = err.Error()
+		txSent.Status = storage.TxSentStatusFailed
+		r.storage.UpdateSwapStatus(swap, storage.SwapStatusDepositFailed, "")
+		return "", fmt.Errorf("could not send claim tx: %w", err)
 	} else {
 		amount = utils.ConvertDecimals(originDecimals, destDecimals, swap.OutAmount)
 	}
