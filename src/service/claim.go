@@ -49,20 +49,30 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 			destWorker = wrkr
 		}
 	}
+
+	if originWorker == nil || destWorker == nil {
+		err := "Missing worker"
+		println(err)
+		txSent.ErrMsg = err
+		txSent.Status = storage.TxSentStatusFailed
+		r.storage.UpdateSwapStatus(swap, storage.SwapStatusDepositFailed, "")
+		return "", fmt.Errorf("could not send claim tx: %s", err)
+	}
+
 	originDecimals, err := originWorker.GetDecimalsFromResourceID(swap.ResourceID)
 	if err != nil {
 		println("error in decimals", err.Error())
 		txSent.ErrMsg = err.Error()
-		txSent.Status = storage.TxSentStatusNotFound
-		r.storage.UpdateSwapStatus(swap, storage.SwapStatusClaimSentFailed, "")
+		txSent.Status = storage.TxSentStatusFailed
+		r.storage.UpdateSwapStatus(swap, storage.SwapStatusDepositFailed, "")
 		return "", fmt.Errorf("could not send claim tx: %w", err)
 	}
 	destDecimals, err := destWorker.GetDecimalsFromResourceID(swap.ResourceID)
 	if err != nil {
 		println("error in decimals", err.Error())
 		txSent.ErrMsg = err.Error()
-		txSent.Status = storage.TxSentStatusNotFound
-		r.storage.UpdateSwapStatus(swap, storage.SwapStatusClaimSentFailed, "")
+		txSent.Status = storage.TxSentStatusFailed
+		r.storage.UpdateSwapStatus(swap, storage.SwapStatusDepositFailed, "")
 		return "", fmt.Errorf("could not send claim tx: %w", err)
 	}
 	var amount string
