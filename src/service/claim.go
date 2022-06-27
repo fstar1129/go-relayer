@@ -80,7 +80,7 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 	if originDecimals == destDecimals {
 		amount = swap.OutAmount
 	} else if originDecimals == 0 || destDecimals == 0 || originDecimals > 63 || destDecimals > 63 {
-		err = fmt.Errorf("One of decimals is zero")
+		err = fmt.Errorf("One of decimals is zero or greater than 63")
 		println("error in decimals", err.Error())
 		txSent.ErrMsg = err.Error()
 		txSent.Status = storage.TxSentStatusFailed
