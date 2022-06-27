@@ -479,20 +479,33 @@ func (w *Erc20Worker) GetDecimalsFromResourceID(resourceID string) (uint8, error
 		return 18, nil
 	}
 
+	// if w.chainName == "ONE" {
+
+	// }else {
 	handlerAddr, err := w.GetHandlerAddr(resourceID)
 	if err != nil {
+		println("error getting handler", w.chainName)
 		return 0, err
 	}
 
 	tokenAddr, err := w.GetTokenAddr(handlerAddr, resourceID)
 	if err != nil {
+		println("error getting token addr", w.chainName)
 		return 0, err
 	}
 
 	decimals, err := w.GetDecimals(tokenAddr)
 	if err != nil {
+		println("error getting decimals", w.chainName)
 		return 0, err
 	}
 
 	return decimals, nil
 }
+
+// }
+
+// func (w *Erc20Worker) getHarmonyHandlerAddress(resourceID interface{}) (string, error) {
+// 	input, err := abi.ABI.Pack( "_resourceIDToHandlerAddress", utils.StringToBytes32(resourceID))
+// 	w.client
+// }

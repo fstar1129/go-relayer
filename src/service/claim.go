@@ -2,6 +2,7 @@ package rlr
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/LATOKEN/relayer-smart-contract.git/src/service/storage"
@@ -38,34 +39,55 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 		SwapID:     swap.SwapID,
 		CreateTime: time.Now().Unix(),
 	}
-
 	var originWorker workers.IWorker
 	var destWorker workers.IWorker
 	for _, wrkr := range r.Workers {
-		if wrkr.GetDestinationID() == swap.OriginChainID {
+		if strings.ToLower(wrkr.GetDestinationID()) == strings.ToLower(swap.OriginChainID) {
 			originWorker = wrkr
 		}
-		if wrkr.GetDestinationID() == swap.DestinationChainID {
+		if strings.ToLower(wrkr.GetDestinationID()) == strings.ToLower(swap.DestinationChainID) {
 			destWorker = wrkr
 		}
 	}
-	println("found origin worker", originWorker.GetChainName(), destWorker.GetChainName())
+
+	if originWorker == nil || destWorker == nil {
+		err := "Missing worker"
+		println(err)
+		txSent.ErrMsg = err
+		txSent.Status = storage.TxSentStatusFailed
+		r.storage.UpdateSwapStatus(swap, storage.SwapStatusDepositFailed, "")
+		return "", fmt.Errorf("could not send claim tx: %s", err)
+	}
+
 	originDecimals, err := originWorker.GetDecimalsFromResourceID(swap.ResourceID)
+	if err != nil {
+		println("error in decimals", err.Error())
+		txSent.ErrMsg = err.Error()
+		txSent.Status = storage.TxSentStatusFailed
+		r.storage.UpdateSwapStatus(swap, storage.SwapStatusDepositFailed, "")
+		return "", fmt.Errorf("could not send claim tx: %w", err)
+	}
+
 	destDecimals, err := destWorker.GetDecimalsFromResourceID(swap.ResourceID)
 	if err != nil {
 		println("error in decimals", err.Error())
 		txSent.ErrMsg = err.Error()
-		txSent.Status = storage.TxSentStatusNotFound
-		r.storage.UpdateSwapStatus(swap, storage.SwapStatusClaimSentFailed, "")
+		txSent.Status = storage.TxSentStatusFailed
+		r.storage.UpdateSwapStatus(swap, storage.SwapStatusDepositFailed, "")
 		return "", fmt.Errorf("could not send claim tx: %w", err)
 	}
 	var amount string
 	if originDecimals == destDecimals {
-		println("same decimals", originDecimals, destDecimals)
 		amount = swap.OutAmount
+	} else if originDecimals == 0 || destDecimals == 0 || originDecimals > 63 || destDecimals > 63 {
+		err = fmt.Errorf("One of decimals is zero or greater than 63")
+		println("error in decimals", err.Error())
+		txSent.ErrMsg = err.Error()
+		txSent.Status = storage.TxSentStatusFailed
+		r.storage.UpdateSwapStatus(swap, storage.SwapStatusDepositFailed, "")
+		return "", fmt.Errorf("could not send claim tx: %w", err)
 	} else {
 		amount = utils.ConvertDecimals(originDecimals, destDecimals, swap.OutAmount)
-		println("swap amount", swap.OutAmount, amount)
 	}
 	r.logger.Infof("claim parameters: depositNonce(%d) | sender(%s) | outAmount(%d) | resourceID(%s)\n",
 		swap.DepositNonce, swap.SenderAddr, amount, swap.ResourceID)

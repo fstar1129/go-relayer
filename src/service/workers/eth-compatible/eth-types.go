@@ -49,14 +49,16 @@ func (w *Erc20Worker) ParseEthProposalEvent(log *types.Log) (ContractEvent, erro
 	ev.DestinationChainID = utils.BytesToBytes8(log.Topics[2].Bytes())
 	ev.RecipientAddress = common.BytesToAddress(log.Topics[3].Bytes())
 
-	var SwapID = utils.CalcutateSwapID(common.Bytes2Hex(ev.OriginChainID[:]), common.Bytes2Hex(ev.DestinationChainID[:]), fmt.Sprint(ev.DepositNonce))
-	w.logger.Infof("[%s] ProposalEvent\n", SwapID)
-	w.logger.Infof("[%s] destination chain ID: 0x%s\n", SwapID, common.Bytes2Hex(ev.DestinationChainID[:]))
-	w.logger.Infof("[%s] deposit nonce: %d\n", SwapID, ev.DepositNonce)
-	w.logger.Infof("[%s] status: %d\n", SwapID, ev.Status)
-	w.logger.Infof("[%s] resource ID: 0x%s\n", SwapID, common.Bytes2Hex(ev.ResourceID[:]))
-	w.logger.Infof("[%s] amount: %s", SwapID, ev.Amount.String())
-	w.logger.Infof("[%s] DataHash: 0x%s\n\n", SwapID, common.Bytes2Hex(ev.DataHash[:]))
+	SwapID := utils.CalcutateSwapID(common.Bytes2Hex(ev.OriginChainID[:]), common.Bytes2Hex(ev.DestinationChainID[:]), fmt.Sprint(ev.DepositNonce))
+
+	fmt.Printf("ProposalEvent\n")
+	fmt.Printf("Swap ID: %s \n", SwapID)
+	fmt.Printf("destination chain ID: 0x%s\n", common.Bytes2Hex(ev.DestinationChainID[:]))
+	fmt.Printf("deposit nonce: %d\n", ev.DepositNonce)
+	fmt.Printf("status: %d\n", ev.Status)
+	fmt.Printf("resource ID: 0x%s\n", common.Bytes2Hex(ev.ResourceID[:]))
+	fmt.Printf("amount: %s", ev.Amount.String())
+	fmt.Printf("DataHash: 0x%s\n\n", common.Bytes2Hex(ev.DataHash[:]))
 
 	w.setTxMonitor(SwapID, ev.Status)
 	return ev, nil
