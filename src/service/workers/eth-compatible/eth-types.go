@@ -49,9 +49,10 @@ func (w *Erc20Worker) ParseEthProposalEvent(log *types.Log) (ContractEvent, erro
 	ev.DestinationChainID = utils.BytesToBytes8(log.Topics[2].Bytes())
 	ev.RecipientAddress = common.BytesToAddress(log.Topics[3].Bytes())
 
+	SwapID := utils.CalcutateSwapID(common.Bytes2Hex(ev.OriginChainID[:]), common.Bytes2Hex(ev.DestinationChainID[:]), fmt.Sprint(ev.DepositNonce))
 
 	fmt.Printf("ProposalEvent\n")
-	fmt.Printf("Swap ID: %s \n", utils.CalcutateSwapID(common.Bytes2Hex(ev.OriginChainID[:]), common.Bytes2Hex(ev.DestinationChainID[:]), fmt.Sprint(ev.DepositNonce)))
+	fmt.Printf("Swap ID: %s \n", SwapID)
 	fmt.Printf("destination chain ID: 0x%s\n", common.Bytes2Hex(ev.DestinationChainID[:]))
 	fmt.Printf("deposit nonce: %d\n", ev.DepositNonce)
 	fmt.Printf("status: %d\n", ev.Status)

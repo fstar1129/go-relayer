@@ -2,6 +2,7 @@ package rlr
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/LATOKEN/relayer-smart-contract.git/src/service/storage"
@@ -66,7 +67,7 @@ func (r *RelayerSRV) sendClaim(worker workers.IWorker, swap *storage.Swap) (stri
 		r.storage.UpdateSwapStatus(swap, storage.SwapStatusDepositFailed, "")
 		return "", fmt.Errorf("could not send claim tx: %w", err)
 	}
-  
+
 	destDecimals, err := destWorker.GetDecimalsFromResourceID(swap.ResourceID)
 	if err != nil {
 		println("error in decimals", err.Error())
