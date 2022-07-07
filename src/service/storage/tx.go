@@ -122,12 +122,12 @@ func (d *DataBase) ConfirmTx(tx *gorm.DB, txLog *TxLog) error {
 	case TxTypeSpend:
 		// BIND tokens(mainchain(e.g. btc, eth) -> lachain)
 		if err := d.UpdateSwapStatusWhenConfirmTx(tx, SwapTypeBind, txLog, []SwapStatus{
-			SwapStatusSpendSent}, nil, SwapStatusSpendConfirmed); err != nil {
+			SwapStatusPassedSent}, nil, SwapStatusSpendSent); err != nil {
 			return err
 		}
 		// UNBIND tokens(lachain -> mainchain(e.g. btc, eth)
 		if err := d.UpdateSwapStatusWhenConfirmTx(tx, SwapTypeUnbind, txLog, []SwapStatus{
-			SwapStatusSpendSent}, nil, SwapStatusSpendConfirmed); err != nil {
+			SwapStatusPassedSent}, nil, SwapStatusSpendSent); err != nil {
 			return err
 		}
 	}
